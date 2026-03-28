@@ -274,6 +274,11 @@ const API_BASE =
     // "http://localhost:3000" // local
     "https://backend-tesis-4m3e.onrender.com" // producción
   );
+
+/** Mismo criterio que backend SKIP_EMAIL_VERIFICATION=true. "false" = flujo con correo y codigo. */
+const SKIP_EMAIL_VERIFICATION =
+  import.meta.env.VITE_SKIP_EMAIL_VERIFICATION !== "false";
+
 const REGISTRATION_JWT_STORAGE_KEY = "todoak_registration_jwt";
 const USER_SESSION_KEY = "tesisamazonia_user_session";
 
@@ -612,6 +617,41 @@ registerDataForm?.addEventListener("submit", async (event) => {
   showInlineMessage(registerDataMessage, "", "");
 
   try {
+    if (SKIP_EMAIL_VERIFICATION) {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: pendingRegistration.email,
+          nombre: pendingRegistration.nombre,
+          genero: pendingRegistration.genero,
+          celular: pendingRegistration.celular,
+          programa: pendingRegistration.programa,
+          semestre: pendingRegistration.semestre,
+          password: pendingRegistration.password,
+        }),
+      });
+      const data = (await res.json()) as { ok?: boolean; message?: string };
+      if (!res.ok || !data.ok) {
+        showInlineMessage(
+          registerDataMessage,
+          data.message ?? "No se pudo completar el registro.",
+          "error",
+        );
+        pendingRegistration = null;
+        return;
+      }
+      pendingRegistration = null;
+      registerDataForm.reset();
+      setAuthMode("login");
+      showInlineMessage(
+        authMessage,
+        data.message ?? "Registro exitoso. Ya puedes iniciar sesion.",
+        "success",
+      );
+      return;
+    }
+
     const result = await sendRegistrationCodeRequest(pendingRegistration.email);
     if (!result.ok) {
       showInlineMessage(registerDataMessage, result.message, "error");
