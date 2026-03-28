@@ -266,7 +266,14 @@ const userDropdownEmail = document.querySelector<HTMLElement>("#user-dropdown-em
 const userLogoutBtn = document.querySelector<HTMLButtonElement>("#user-logout-btn");
 const homeSessionToast = document.querySelector<HTMLElement>("#home-session-toast");
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+// Backend: VITE_API_URL en .env gana si existe. Si no, comenta una URL
+// y descomenta la otra: local (npm run dev) vs producción (Vercel).
+const API_BASE =
+  import.meta.env.VITE_API_URL ??
+  (
+    // "http://localhost:3000" // local
+    "https://backend-tesis-4m3e.onrender.com" // producción
+  );
 const REGISTRATION_JWT_STORAGE_KEY = "todoak_registration_jwt";
 const USER_SESSION_KEY = "tesisamazonia_user_session";
 
