@@ -81,6 +81,80 @@ app.innerHTML = `
       </article>
     </section>
 
+    <section id="dashboard-view" class="hero-content dashboard-view hidden">
+      <div id="dashboard-session-toast" class="home-toast hidden" role="status" aria-live="polite"></div>
+      <article class="dashboard-welcome">
+        <span class="badge">Panel principal</span>
+        <h2 class="dashboard-title">Hola, <span id="dashboard-user-name">estudiante</span></h2>
+        <p class="dashboard-subtitle">
+          Este es tu espacio para avanzar en integrales: revisa el ranking, monitorea tu progreso,
+          repasa temas clave y aprende con rutas guiadas.
+        </p>
+      </article>
+      <div class="dashboard-grid">
+        <article class="dashboard-card dashboard-card--ranking">
+          <header class="dashboard-card-head">
+            <h3>Ranking</h3>
+            <span class="dashboard-pill">Top estudiantes</span>
+          </header>
+          <ol class="ranking-list">
+            <li><span class="ranking-user">Ana Martinez</span><span class="ranking-score">985 pts</span></li>
+            <li><span class="ranking-user">Sebastian Lopez</span><span class="ranking-score">940 pts</span></li>
+            <li><span class="ranking-user">Valentina Rojas</span><span class="ranking-score">905 pts</span></li>
+            <li><span class="ranking-user">Mateo Ramirez</span><span class="ranking-score">890 pts</span></li>
+            <li><span class="ranking-user">Camila Perez</span><span class="ranking-score">875 pts</span></li>
+          </ol>
+          <button type="button" class="btn btn-ghost btn-block" id="ranking-action-btn">Ver ranking completo</button>
+        </article>
+        <article class="dashboard-card dashboard-card--progress">
+          <header class="dashboard-card-head">
+            <h3>Tu progreso</h3>
+            <span class="dashboard-pill">Semana actual</span>
+          </header>
+          <div class="progress-metrics">
+            <div class="progress-item">
+              <span>Integrales completadas</span>
+              <strong>18 / 25</strong>
+            </div>
+            <div class="progress-track">
+              <span style="width: 72%"></span>
+            </div>
+            <div class="progress-item">
+              <span>Precision promedio</span>
+              <strong>86%</strong>
+            </div>
+            <div class="progress-track progress-track--alt">
+              <span style="width: 86%"></span>
+            </div>
+          </div>
+        </article>
+        <article class="dashboard-card dashboard-card--review">
+          <header class="dashboard-card-head">
+            <h3>Repasar</h3>
+            <span class="dashboard-pill">Refuerza bases</span>
+          </header>
+          <ul class="topic-list">
+            <li>Integracion por partes</li>
+            <li>Sustitucion y cambio de variable</li>
+            <li>Fracciones parciales</li>
+          </ul>
+          <button type="button" class="btn btn-primary btn-block" id="review-action-btn">Iniciar repaso</button>
+        </article>
+        <article class="dashboard-card dashboard-card--learn">
+          <header class="dashboard-card-head">
+            <h3>Aprender</h3>
+            <span class="dashboard-pill">Ruta recomendada</span>
+          </header>
+          <ul class="topic-list">
+            <li>Fundamentos de integracion</li>
+            <li>Aplicaciones geometricas y fisicas</li>
+            <li>Desafios de nivel avanzado</li>
+          </ul>
+          <button type="button" class="btn btn-primary btn-block" id="learn-action-btn">Comenzar aprendizaje</button>
+        </article>
+      </div>
+    </section>
+
     <section id="auth-view" class="hero-content auth-wrapper hidden">
       <article class="auth-card" id="auth-card">
         <div id="login-panel">
@@ -238,6 +312,7 @@ app.innerHTML = `
 const tabButtons = document.querySelectorAll<HTMLButtonElement>("[data-auth-tab]");
 const goHomeButton = document.querySelector<HTMLButtonElement>("[data-go-home]");
 const homeView = document.querySelector<HTMLElement>("#home-view");
+const dashboardView = document.querySelector<HTMLElement>("#dashboard-view");
 const authView = document.querySelector<HTMLElement>("#auth-view");
 const authCard = document.querySelector<HTMLElement>("#auth-card");
 const loginPanel = document.querySelector<HTMLElement>("#login-panel");
@@ -265,13 +340,18 @@ const userDropdownName = document.querySelector<HTMLElement>("#user-dropdown-nam
 const userDropdownEmail = document.querySelector<HTMLElement>("#user-dropdown-email");
 const userLogoutBtn = document.querySelector<HTMLButtonElement>("#user-logout-btn");
 const homeSessionToast = document.querySelector<HTMLElement>("#home-session-toast");
+const dashboardSessionToast = document.querySelector<HTMLElement>("#dashboard-session-toast");
+const dashboardUserName = document.querySelector<HTMLElement>("#dashboard-user-name");
+const rankingActionBtn = document.querySelector<HTMLButtonElement>("#ranking-action-btn");
+const reviewActionBtn = document.querySelector<HTMLButtonElement>("#review-action-btn");
+const learnActionBtn = document.querySelector<HTMLButtonElement>("#learn-action-btn");
 
 // Backend: VITE_API_URL en .env gana si existe. Si no, comenta una URL
 // y descomenta la otra: local (npm run dev) vs producción (Vercel).
 const API_BASE =
   import.meta.env.VITE_API_URL ??
   (
-    // "http://localhost:3000" // local
+     //"http://localhost:3000" // local
     "https://backend-tesis-4m3e.onrender.com" // producción
   );
 
@@ -387,6 +467,20 @@ function showHomeSessionToast(text: string): void {
   }, 4500);
 }
 
+function showDashboardSessionToast(text: string): void {
+  if (!dashboardSessionToast) {
+    return;
+  }
+  dashboardSessionToast.textContent = text;
+  dashboardSessionToast.classList.remove("hidden");
+  if (toastHideTimer !== undefined) {
+    window.clearTimeout(toastHideTimer);
+  }
+  toastHideTimer = window.setTimeout(() => {
+    dashboardSessionToast.classList.add("hidden");
+  }, 4500);
+}
+
 function resetCodeDigits(): void {
   codeDigitInputs.forEach((input) => {
     input.value = "";
@@ -462,7 +556,7 @@ function showRegisterStep(which: "data" | "verify"): void {
 }
 
 function showHomeView(): void {
-  if (!homeView || !authView) {
+  if (!homeView || !authView || !dashboardView) {
     return;
   }
 
@@ -473,6 +567,7 @@ function showHomeView(): void {
   showInlineMessage(verifyMessage, "", "");
   showRegisterStep("data");
   homeView.classList.remove("hidden");
+  dashboardView.classList.add("hidden");
   authView.classList.add("hidden");
 
   tabButtons.forEach((button) => {
@@ -481,14 +576,45 @@ function showHomeView(): void {
   applyHeaderAuthState();
 }
 
+function showDashboardView(toastText = ""): void {
+  if (!homeView || !authView || !dashboardView) {
+    return;
+  }
+  const session = getUserSession();
+  if (!session) {
+    showHomeView();
+    return;
+  }
+  clearRegistrationToken();
+  pendingRegistration = null;
+  showInlineMessage(authMessage, "", "");
+  showInlineMessage(registerDataMessage, "", "");
+  showInlineMessage(verifyMessage, "", "");
+  showRegisterStep("data");
+  homeView.classList.add("hidden");
+  authView.classList.add("hidden");
+  dashboardView.classList.remove("hidden");
+  if (dashboardUserName) {
+    dashboardUserName.textContent = session.nombre.trim() || "estudiante";
+  }
+  tabButtons.forEach((button) => {
+    button.classList.remove("is-active");
+  });
+  applyHeaderAuthState();
+  if (toastText) {
+    showDashboardSessionToast(toastText);
+  }
+}
+
 function setAuthMode(mode: "login" | "register"): void {
-  if (!homeView || !authView || !loginPanel || !registerPanel) {
+  if (!homeView || !authView || !dashboardView || !loginPanel || !registerPanel) {
     return;
   }
 
   authMode = mode;
 
   homeView.classList.add("hidden");
+  dashboardView.classList.add("hidden");
   authView.classList.remove("hidden");
 
   if (mode === "login") {
@@ -525,6 +651,10 @@ tabButtons.forEach((button) => {
 });
 
 goHomeButton?.addEventListener("click", () => {
+  if (getUserSession()) {
+    showDashboardView();
+    return;
+  }
   showHomeView();
 });
 
@@ -844,8 +974,7 @@ loginForm?.addEventListener("submit", async (event) => {
     applyHeaderAuthState();
     loginForm.reset();
     showInlineMessage(authMessage, "", "");
-    showHomeView();
-    showHomeSessionToast(data.message ?? "Sesion iniciada con exito.");
+    showDashboardView(data.message ?? "Sesion iniciada con exito.");
   } catch {
     showInlineMessage(authMessage, "No hay conexion con el servidor.", "error");
   } finally {
@@ -871,6 +1000,18 @@ userLogoutBtn?.addEventListener("click", () => {
   showHomeView();
 });
 
+rankingActionBtn?.addEventListener("click", () => {
+  showDashboardSessionToast("El ranking completo estara disponible en la siguiente iteracion.");
+});
+
+reviewActionBtn?.addEventListener("click", () => {
+  showDashboardSessionToast("Muy pronto abriremos ejercicios personalizados para repasar.");
+});
+
+learnActionBtn?.addEventListener("click", () => {
+  showDashboardSessionToast("La ruta de aprendizaje detallada estara lista en la siguiente fase.");
+});
+
 document.addEventListener("click", () => {
   closeUserMenu();
 });
@@ -879,4 +1020,8 @@ userMenu?.addEventListener("click", (e) => {
   e.stopPropagation();
 });
 
-applyHeaderAuthState();
+if (getUserSession()) {
+  showDashboardView();
+} else {
+  showHomeView();
+}

@@ -690,6 +690,165 @@ h1 span {
   letter-spacing: 0.02em;
 }
 
+.dashboard-view {
+  width: min(1120px, 100%);
+}
+
+.dashboard-welcome {
+  margin: 0 auto 1.1rem;
+  padding: 1.25rem 1.3rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(111, 128, 178, 0.26);
+  background: linear-gradient(180deg, rgba(12, 18, 34, 0.88), rgba(7, 10, 20, 0.88));
+  box-shadow: 0 16px 38px rgba(2, 5, 14, 0.45);
+}
+
+.dashboard-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 4.4vw, 2.2rem);
+  line-height: 1.08;
+}
+
+.dashboard-title span {
+  color: #8ff6ed;
+}
+
+.dashboard-subtitle {
+  margin-top: 0.72rem;
+  color: var(--muted);
+  max-width: 860px;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 0.95rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.dashboard-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(111, 128, 178, 0.24);
+  background: linear-gradient(180deg, rgba(12, 18, 34, 0.88), rgba(7, 10, 20, 0.88));
+  padding: 1rem 1rem 1.05rem;
+  box-shadow: 0 16px 38px rgba(2, 5, 14, 0.45);
+}
+
+.dashboard-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.dashboard-card-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.dashboard-pill {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #8ff6ed;
+  border: 1px solid rgba(8, 216, 199, 0.38);
+  background: rgba(8, 216, 199, 0.12);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+}
+
+.dashboard-card--ranking {
+  grid-column: span 7;
+}
+
+.dashboard-card--progress {
+  grid-column: span 5;
+}
+
+.dashboard-card--review,
+.dashboard-card--learn {
+  grid-column: span 6;
+}
+
+.ranking-list {
+  margin: 0 0 0.9rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ranking-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.7rem;
+  background: rgba(8, 216, 199, 0.08);
+  border: 1px solid rgba(8, 216, 199, 0.2);
+}
+
+.ranking-user {
+  font-weight: 600;
+  color: #f3f5ff;
+}
+
+.ranking-score {
+  font-size: 0.84rem;
+  color: #8ff6ed;
+  font-weight: 700;
+}
+
+.progress-metrics {
+  display: grid;
+  gap: 0.62rem;
+}
+
+.progress-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+}
+
+.progress-item span {
+  color: #c7d0eb;
+}
+
+.progress-item strong {
+  color: #f3f5ff;
+}
+
+.progress-track {
+  height: 0.62rem;
+  border-radius: 999px;
+  background: rgba(146, 157, 196, 0.25);
+  overflow: hidden;
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), #7ad8ff);
+}
+
+.progress-track--alt span {
+  background: linear-gradient(90deg, #7ad8ff, #9df6ee);
+}
+
+.topic-list {
+  margin: 0 0 0.9rem;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.topic-list li {
+  color: #d8def3;
+  line-height: 1.35;
+}
+
 .hidden {
   display: none;
 }
@@ -750,5 +909,16 @@ h1 span {
 
   .equation {
     line-height: 1.45;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-card--ranking,
+  .dashboard-card--progress,
+  .dashboard-card--review,
+  .dashboard-card--learn {
+    grid-column: auto;
   }
 }
