@@ -180,25 +180,47 @@ app.innerHTML = `
         </button>
       </nav>
       <div class="topbar-user hidden" id="topbar-user">
-        <div class="user-menu" id="user-menu">
-          <button
-            type="button"
-            class="user-avatar"
-            id="user-menu-trigger"
-            aria-expanded="false"
-            aria-haspopup="true"
-            aria-label="Menu de usuario"
-          >
-            <span id="user-avatar-initial">?</span>
-          </button>
-          <div class="user-dropdown" id="user-dropdown" role="menu">
-            <div class="user-dropdown-header">
-              <p class="user-dropdown-name" id="user-dropdown-name"></p>
-              <p class="user-dropdown-email" id="user-dropdown-email"></p>
+        <div class="user-topbar-cluster">
+          <div class="user-avatar-column">
+            <div class="user-menu" id="user-menu">
+              <button
+                type="button"
+                class="user-avatar"
+                id="user-menu-trigger"
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Menu de usuario"
+              >
+                <span id="user-avatar-initial">?</span>
+              </button>
+              <div class="user-dropdown" id="user-dropdown" role="menu">
+                <div class="user-dropdown-header">
+                  <p class="user-dropdown-name" id="user-dropdown-name"></p>
+                  <p class="user-dropdown-email" id="user-dropdown-email"></p>
+                </div>
+                <button type="button" class="user-dropdown-logout" id="user-logout-btn" role="menuitem">
+                  Cerrar sesion
+                </button>
+              </div>
             </div>
-            <button type="button" class="user-dropdown-logout" id="user-logout-btn" role="menuitem">
-              Cerrar sesion
-            </button>
+            <div class="student-trophy-cluster hidden" id="student-trophy-cluster" title="Tu experiencia y logros">
+              <span class="student-trophy-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" focusable="false">
+                  <defs>
+                    <linearGradient id="trophyGradTopbar" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#ffe082" />
+                      <stop offset="0.45" stop-color="#ffb300" />
+                      <stop offset="1" stop-color="#e65100" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    fill="url(#trophyGradTopbar)"
+                    d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"
+                  />
+                </svg>
+              </span>
+              <span class="student-trophy-xp" id="student-trophy-xp"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -456,16 +478,20 @@ app.innerHTML = `
           </div>
         </section>
 
-        <section id="student-panel" class="role-panel hidden">
-          <nav class="dashboard-subnav" role="tablist" aria-label="Secciones del estudiante">
-            <button type="button" class="subnav-btn is-active" role="tab" data-student-tab="resumen" aria-selected="true">
-              Resumen
-            </button>
-            <button type="button" class="subnav-btn" role="tab" data-student-tab="explorar" aria-selected="false">
-              Clases publicas
-            </button>
-          </nav>
+        <section id="student-panel" class="role-panel student-layout hidden">
+          <aside class="student-sidebar" aria-label="Menu del estudiante">
+            <p class="student-sidebar-label">Tu espacio</p>
+            <nav class="student-sidebar-nav" role="tablist">
+              <button type="button" class="subnav-btn student-sidebar-link is-active" role="tab" data-student-tab="resumen" aria-selected="true">
+                Resumen
+              </button>
+              <button type="button" class="subnav-btn student-sidebar-link" role="tab" data-student-tab="explorar" aria-selected="false">
+                Clases publicas
+              </button>
+            </nav>
+          </aside>
 
+          <div class="student-main">
           <div id="student-tab-resumen" class="student-tab" role="tabpanel" data-student-panel="resumen">
             <div class="dashboard-two-columns">
               <article class="panel-card">
@@ -489,6 +515,7 @@ app.innerHTML = `
               <p class="panel-subtitle">Solo aparecen clases abiertas con cupo disponible.</p>
               <div class="panel-list" id="student-public-classes-list"></div>
             </article>
+          </div>
           </div>
         </section>
       </div>
@@ -686,6 +713,8 @@ const userAvatarInitial = document.querySelector<HTMLElement>("#user-avatar-init
 const userDropdownName = document.querySelector<HTMLElement>("#user-dropdown-name");
 const userDropdownEmail = document.querySelector<HTMLElement>("#user-dropdown-email");
 const userLogoutBtn = document.querySelector<HTMLButtonElement>("#user-logout-btn");
+const studentTrophyCluster = document.querySelector<HTMLElement>("#student-trophy-cluster");
+const studentTrophyXp = document.querySelector<HTMLElement>("#student-trophy-xp");
 const homeSessionToast = document.querySelector<HTMLElement>("#home-session-toast");
 const dashboardSessionToast = document.querySelector<HTMLElement>("#dashboard-session-toast");
 const dashboardRoleBadge = document.querySelector<HTMLElement>("#dashboard-role-badge");
@@ -806,10 +835,14 @@ function applyHeaderAuthState(): void {
     if (userDropdownEmail) {
       userDropdownEmail.textContent = session.email;
     }
+    if (studentTrophyCluster) {
+      studentTrophyCluster.classList.toggle("hidden", session.role !== "estudiante");
+    }
   } else {
     topbarGuest?.classList.remove("hidden");
     topbarUser?.classList.add("hidden");
     closeUserMenu();
+    studentTrophyCluster?.classList.add("hidden");
   }
 }
 
@@ -1236,7 +1269,6 @@ function setProfessorTab(tab: ProfessorTabId): void {
     const panelId = el.id.replace("professor-tab-", "") as ProfessorTabId;
     el.classList.toggle("hidden", panelId !== tab);
   });
-  professorPanel.querySelector<HTMLElement>(".professor-main")?.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function setStudentTab(tab: StudentTabId): void {
@@ -1270,7 +1302,7 @@ function renderDashboard(data: DashboardResponse): void {
     dashboardSubtitle.textContent =
       data.user.role === "profesor"
         ? `Usa el menu izquierdo para cambiar de seccion; solo se muestra el contenido elegido. Programa: ${data.user.programa}.`
-        : `Resumen de tus clases y ejercicios; en otra pestaña puedes unirte a clases publicas. Programa: ${data.user.programa}.`;
+        : `Menu a la izquierda para cambiar de seccion. Programa: ${data.user.programa}.`;
   }
   if (permissionsList) {
     permissionsList.innerHTML = data.permissions
@@ -1284,6 +1316,12 @@ function renderDashboard(data: DashboardResponse): void {
 
   renderMetrics(data.metrics);
   renderQuickActions(data.quickActions);
+
+  if (studentTrophyXp && data.user.role === "estudiante") {
+    const xp = data.user.xpTotal ?? 0;
+    const coins = data.user.coinsTotal ?? 0;
+    studentTrophyXp.textContent = `${xp} XP · ${coins} mon`;
+  }
 
   const isProfessor = data.user.role === "profesor";
   professorPanel?.classList.toggle("hidden", !isProfessor);
