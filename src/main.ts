@@ -219,6 +219,14 @@ app.innerHTML = `
               </label>
 
               <label class="auth-field">
+                <span>Rol</span>
+                <select name="role" required>
+                  <option value="estudiante" selected>Estudiante</option>
+                  <option value="profesor">Profesor</option>
+                </select>
+              </label>
+
+              <label class="auth-field">
                 <span>Genero</span>
                 <select name="genero" required>
                   <option value="" disabled selected hidden>Selecciona una opcion</option>
@@ -365,6 +373,8 @@ const USER_SESSION_KEY = "tesisamazonia_user_session";
 let authMode: "login" | "register" = "login";
 let toastHideTimer: number | undefined;
 
+type Role = "estudiante" | "profesor";
+
 type PendingRegistration = {
   email: string;
   nombre: string;
@@ -373,6 +383,7 @@ type PendingRegistration = {
   programa: string;
   semestre: number;
   password: string;
+  role: Role;
 };
 
 let pendingRegistration: PendingRegistration | null = null;
@@ -381,6 +392,7 @@ type UserSession = {
   userId: number;
   email: string;
   nombre: string;
+  role?: Role;
 };
 
 function clearRegistrationToken(): void {
@@ -538,6 +550,7 @@ function populateRegisterFormFromPending(): void {
   };
   set("email", p.email);
   set("nombre", p.nombre);
+  set("role", p.role);
   set("genero", p.genero);
   set("celular", p.celular);
   set("programa", p.programa);
@@ -722,6 +735,9 @@ registerDataForm?.addEventListener("submit", async (event) => {
     return;
   }
 
+  const rawRole = String(fd.get("role") ?? "estudiante");
+  const role: Role = rawRole === "profesor" ? "profesor" : "estudiante";
+
   pendingRegistration = {
     email: email.trim().toLowerCase(),
     nombre: String(fd.get("nombre") ?? "").trim(),
@@ -730,6 +746,7 @@ registerDataForm?.addEventListener("submit", async (event) => {
     programa: String(fd.get("programa") ?? "").trim(),
     semestre: sem,
     password,
+    role,
   };
 
   if (
@@ -759,6 +776,7 @@ registerDataForm?.addEventListener("submit", async (event) => {
           programa: pendingRegistration.programa,
           semestre: pendingRegistration.semestre,
           password: pendingRegistration.password,
+          role: pendingRegistration.role,
         }),
       });
       const data = (await res.json()) as { ok?: boolean; message?: string };
@@ -955,6 +973,7 @@ loginForm?.addEventListener("submit", async (event) => {
       userId?: number;
       nombre?: string;
       email?: string;
+      role?: string;
     };
     if (!res.ok || !data.ok) {
       showInlineMessage(authMessage, data.message ?? "No se pudo iniciar sesion.", "error");
@@ -969,6 +988,7 @@ loginForm?.addEventListener("submit", async (event) => {
         userId: data.userId,
         email: data.email,
         nombre: data.nombre,
+        role: data.role === "profesor" ? "profesor" : "estudiante",
       });
     }
     applyHeaderAuthState();
