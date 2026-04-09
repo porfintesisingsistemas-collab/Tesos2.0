@@ -252,18 +252,10 @@ app.innerHTML = `
 
     <section id="dashboard-view" class="hero-content dashboard-view hidden">
       <div id="dashboard-session-toast" class="home-toast hidden" role="status" aria-live="polite"></div>
-      <div class="dashboard-shell">
-        <article class="dashboard-banner dashboard-banner--minimal">
-          <div>
-            <span class="badge" id="dashboard-role-badge">Panel</span>
-            <h2 class="dashboard-title" id="dashboard-title">Bienvenido</h2>
-            <p class="dashboard-subtitle" id="dashboard-subtitle"></p>
-          </div>
-        </article>
-
-        <section id="professor-panel" class="role-panel professor-layout hidden">
+      <div class="dashboard-shell dashboard-shell--panel">
+        <section id="professor-panel" class="role-panel professor-layout hidden" aria-hidden="true">
           <aside class="professor-sidebar" aria-label="Menu del profesor">
-            <p class="professor-sidebar-label">Menu</p>
+            <p class="professor-sidebar-label">Profesor</p>
             <nav class="professor-sidebar-nav" role="tablist">
               <button type="button" class="subnav-btn professor-sidebar-link is-active" role="tab" data-prof-tab="inicio" aria-selected="true">
                 Inicio
@@ -287,9 +279,7 @@ app.innerHTML = `
           <div id="professor-tab-inicio" class="professor-tab" role="tabpanel" data-prof-panel="inicio">
             <article class="panel-card panel-welcome">
               <p class="panel-welcome-kicker" id="professor-welcome-kicker">Bienvenido/a</p>
-              <p class="panel-welcome-text">
-                Usa el menu de la izquierda para ver el resumen de tus clases, registrar estudiantes, crear clases o publicar ejercicios.
-              </p>
+              <p class="panel-welcome-text" id="professor-welcome-line"></p>
             </article>
           </div>
           <div id="professor-tab-resumen" class="professor-tab hidden" role="tabpanel" data-prof-panel="resumen">
@@ -481,9 +471,9 @@ app.innerHTML = `
           </div>
         </section>
 
-        <section id="student-panel" class="role-panel student-layout hidden">
+        <section id="student-panel" class="role-panel student-layout hidden" aria-hidden="true">
           <aside class="student-sidebar" aria-label="Menu del estudiante">
-            <p class="student-sidebar-label">Menu</p>
+            <p class="student-sidebar-label">Estudiante</p>
             <nav class="student-sidebar-nav" role="tablist">
               <button type="button" class="subnav-btn student-sidebar-link is-active" role="tab" data-student-tab="inicio" aria-selected="true">
                 Inicio
@@ -501,9 +491,7 @@ app.innerHTML = `
           <div id="student-tab-inicio" class="student-tab" role="tabpanel" data-student-panel="inicio">
             <article class="panel-card panel-welcome">
               <p class="panel-welcome-kicker" id="student-welcome-kicker">Bienvenido/a</p>
-              <p class="panel-welcome-text">
-                Elige en el menu lateral si quieres ver tu resumen de clases y tareas o explorar clases publicas para unirte.
-              </p>
+              <p class="panel-welcome-text" id="student-welcome-line"></p>
             </article>
           </div>
           <div id="student-tab-resumen" class="student-tab hidden" role="tabpanel" data-student-panel="resumen">
@@ -731,9 +719,6 @@ const studentTrophyCluster = document.querySelector<HTMLElement>("#student-troph
 const studentTrophyXp = document.querySelector<HTMLElement>("#student-trophy-xp");
 const homeSessionToast = document.querySelector<HTMLElement>("#home-session-toast");
 const dashboardSessionToast = document.querySelector<HTMLElement>("#dashboard-session-toast");
-const dashboardRoleBadge = document.querySelector<HTMLElement>("#dashboard-role-badge");
-const dashboardTitle = document.querySelector<HTMLElement>("#dashboard-title");
-const dashboardSubtitle = document.querySelector<HTMLElement>("#dashboard-subtitle");
 const professorPanel = document.querySelector<HTMLElement>("#professor-panel");
 const studentPanel = document.querySelector<HTMLElement>("#student-panel");
 const createClassForm = document.querySelector<HTMLFormElement>("#create-class-form");
@@ -1264,26 +1249,19 @@ function setStudentTab(tab: StudentTabId): void {
 
 function renderDashboard(data: DashboardResponse): void {
   dashboardData = data;
-  if (dashboardRoleBadge) {
-    dashboardRoleBadge.textContent = data.user.roleLabel;
-  }
-  if (dashboardTitle) {
-    const first = data.user.nombre.trim().split(/\s+/)[0] ?? data.user.nombre;
-    dashboardTitle.textContent = `Hola, ${first}`;
-  }
-  if (dashboardSubtitle) {
-    dashboardSubtitle.textContent =
-      data.user.role === "profesor"
-        ? "Selecciona una opcion en el menu lateral."
-        : "Selecciona una opcion en el menu lateral.";
-  }
   const professorWelcomeKicker = document.getElementById("professor-welcome-kicker");
-  if (professorWelcomeKicker && data.user.role === "profesor") {
-    professorWelcomeKicker.textContent = `Bienvenido/a, ${data.user.nombre.trim() || "docente"}`;
+  const professorWelcomeLine = document.getElementById("professor-welcome-line");
+  if (professorWelcomeKicker && professorWelcomeLine && data.user.role === "profesor") {
+    professorWelcomeKicker.textContent = `Hola, ${data.user.nombre.trim() || "docente"}`;
+    professorWelcomeLine.textContent =
+      "Resumen, alumnos, clases y ejercicios estan en el menu. Elige una opcion para continuar.";
   }
   const studentWelcomeKicker = document.getElementById("student-welcome-kicker");
-  if (studentWelcomeKicker && data.user.role === "estudiante") {
-    studentWelcomeKicker.textContent = `Bienvenido/a, ${data.user.nombre.trim() || "estudiante"}`;
+  const studentWelcomeLine = document.getElementById("student-welcome-line");
+  if (studentWelcomeKicker && studentWelcomeLine && data.user.role === "estudiante") {
+    studentWelcomeKicker.textContent = `Hola, ${data.user.nombre.trim() || "estudiante"}`;
+    studentWelcomeLine.textContent =
+      "Usa el menu para ver tu resumen, tareas o unirte a una clase publica.";
   }
 
   if (studentTrophyXp && data.user.role === "estudiante") {
@@ -1293,8 +1271,14 @@ function renderDashboard(data: DashboardResponse): void {
   }
 
   const isProfessor = data.user.role === "profesor";
-  professorPanel?.classList.toggle("hidden", !isProfessor);
-  studentPanel?.classList.toggle("hidden", isProfessor);
+  if (professorPanel) {
+    professorPanel.classList.toggle("hidden", !isProfessor);
+    professorPanel.setAttribute("aria-hidden", isProfessor ? "false" : "true");
+  }
+  if (studentPanel) {
+    studentPanel.classList.toggle("hidden", isProfessor);
+    studentPanel.setAttribute("aria-hidden", isProfessor ? "true" : "false");
+  }
 
   if (isProfessor) {
     setProfessorTab("inicio");
