@@ -874,6 +874,11 @@ h1 span {
   align-items: stretch;
 }
 
+/* Must beat specificity of rule above so the other role panel stays hidden */
+#professor-panel.professor-layout.hidden {
+  display: none;
+}
+
 .professor-sidebar {
   position: sticky;
   top: 5.25rem;
@@ -922,6 +927,10 @@ h1 span {
   grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
   gap: 1.35rem;
   align-items: stretch;
+}
+
+#student-panel.student-layout.hidden {
+  display: none;
 }
 
 .student-sidebar {
