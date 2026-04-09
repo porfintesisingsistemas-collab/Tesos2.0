@@ -130,15 +130,15 @@ app.innerHTML = `
         </article>
         <article class="dashboard-card dashboard-card--review">
           <header class="dashboard-card-head">
-            <h3>Repasar</h3>
-            <span class="dashboard-pill">Refuerza bases</span>
+            <h3>Mis clases</h3>
+            <span class="dashboard-pill">Gestion academica</span>
           </header>
           <ul class="topic-list">
-            <li>Integracion por partes</li>
-            <li>Sustitucion y cambio de variable</li>
-            <li>Fracciones parciales</li>
+            <li>Ver clases matriculadas</li>
+            <li>Revisar progreso por clase</li>
+            <li>Entrar a actividades asignadas</li>
           </ul>
-          <button type="button" class="btn btn-primary btn-block" id="review-action-btn">Iniciar repaso</button>
+          <button type="button" class="btn btn-primary btn-block" id="review-action-btn">Ver mis clases</button>
         </article>
         <article class="dashboard-card dashboard-card--learn">
           <header class="dashboard-card-head">
@@ -1005,7 +1005,7 @@ rankingActionBtn?.addEventListener("click", () => {
 });
 
 reviewActionBtn?.addEventListener("click", () => {
-  showDashboardSessionToast("Muy pronto abriremos ejercicios personalizados para repasar.");
+  showDashboardSessionToast("Muy pronto abriremos tu listado completo de clases y su progreso.");
 });
 
 learnActionBtn?.addEventListener("click", () => {
