@@ -1,5 +1,148 @@
 import "./styles.css";
 
+type Role = "estudiante" | "profesor";
+
+type PendingRegistration = {
+  email: string;
+  nombre: string;
+  genero: string;
+  celular: string;
+  programa: string;
+  semestre: number;
+  password: string;
+  role: Role;
+  matricula?: string;
+};
+
+type UserSession = {
+  userId: number;
+  email: string;
+  nombre: string;
+  role: Role;
+};
+
+type NotificationItem = {
+  id: number;
+  title: string;
+  body: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+};
+
+type MetricItem = {
+  id: string;
+  label: string;
+  value: number | string;
+  accent: string;
+};
+
+type QuickAction = {
+  id: string;
+  title: string;
+  description: string;
+};
+
+type ProfessorClass = {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  cupo: number;
+  visibilidad: string;
+  totalStudents: number;
+  averageProgress: number;
+  totalExercises: number;
+};
+
+type ProfessorExercise = {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  reviewTopic: string;
+  dificultad: string;
+  dueDate: string | null;
+  className: string;
+  coinsReward: number;
+  xpReward: number;
+};
+
+type ProfessorStudent = {
+  id: number;
+  nombre: string;
+  email: string;
+  className: string;
+  progress: number;
+};
+
+type StudentClass = {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  profesor: string;
+  progress: number;
+  totalExercises: number;
+  completedExercises: number;
+};
+
+type StudentExercise = {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  reviewTopic: string;
+  dificultad: string;
+  dueDate: string | null;
+  className: string;
+  status: string;
+  grade: number | null;
+};
+
+type PublicClassOffer = {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  profesor: string;
+  cupo: number;
+  enrolled: number;
+};
+
+type DashboardResponse = {
+  ok: true;
+  user: {
+    userId: number;
+    email: string;
+    nombre: string;
+    role: Role;
+    roleLabel: string;
+    programa: string;
+    semestre: number;
+    matricula?: string | null;
+    coinsTotal?: number;
+    xpTotal?: number;
+  };
+  permissions: string[];
+  unreadNotifications: number;
+  notifications: NotificationItem[];
+  quickActions: QuickAction[];
+  metrics: MetricItem[];
+  professorData?: {
+    classes: ProfessorClass[];
+    exercises: ProfessorExercise[];
+    students: ProfessorStudent[];
+    insights: string[];
+  };
+  studentData?: {
+    classes: StudentClass[];
+    exercises: StudentExercise[];
+    publicClasses?: PublicClassOffer[];
+    insights: string[];
+  };
+};
+
+type ApiEnvelope = {
+  ok?: boolean;
+  message?: string;
+};
+
 const app = document.querySelector<HTMLDivElement>("#app");
 
 if (!app) {
@@ -83,75 +226,203 @@ app.innerHTML = `
 
     <section id="dashboard-view" class="hero-content dashboard-view hidden">
       <div id="dashboard-session-toast" class="home-toast hidden" role="status" aria-live="polite"></div>
-      <article class="dashboard-welcome">
-        <span class="badge">Panel principal</span>
-        <h2 class="dashboard-title">Hola, <span id="dashboard-user-name">estudiante</span></h2>
-        <p class="dashboard-subtitle">
-          Este es tu espacio para avanzar en integrales: revisa el ranking, monitorea tu progreso,
-          repasa temas clave y aprende con rutas guiadas.
-        </p>
-      </article>
-      <div class="dashboard-grid">
-        <article class="dashboard-card dashboard-card--ranking">
-          <header class="dashboard-card-head">
-            <h3>Ranking</h3>
-            <span class="dashboard-pill">Top estudiantes</span>
-          </header>
-          <ol class="ranking-list">
-            <li><span class="ranking-user">Ana Martinez</span><span class="ranking-score">985 pts</span></li>
-            <li><span class="ranking-user">Sebastian Lopez</span><span class="ranking-score">940 pts</span></li>
-            <li><span class="ranking-user">Valentina Rojas</span><span class="ranking-score">905 pts</span></li>
-            <li><span class="ranking-user">Mateo Ramirez</span><span class="ranking-score">890 pts</span></li>
-            <li><span class="ranking-user">Camila Perez</span><span class="ranking-score">875 pts</span></li>
-          </ol>
-          <button type="button" class="btn btn-ghost btn-block" id="ranking-action-btn">Ver ranking completo</button>
-        </article>
-        <article class="dashboard-card dashboard-card--progress">
-          <header class="dashboard-card-head">
-            <h3>Tu progreso</h3>
-            <span class="dashboard-pill">Semana actual</span>
-          </header>
-          <div class="progress-metrics">
-            <div class="progress-item">
-              <span>Integrales completadas</span>
-              <strong>18 / 25</strong>
-            </div>
-            <div class="progress-track">
-              <span style="width: 72%"></span>
-            </div>
-            <div class="progress-item">
-              <span>Precision promedio</span>
-              <strong>86%</strong>
-            </div>
-            <div class="progress-track progress-track--alt">
-              <span style="width: 86%"></span>
-            </div>
+      <div class="dashboard-shell">
+        <article class="dashboard-banner">
+          <div>
+            <span class="badge" id="dashboard-role-badge">Panel</span>
+            <h2 class="dashboard-title" id="dashboard-title">Tu panel</h2>
+            <p class="dashboard-subtitle" id="dashboard-subtitle"></p>
           </div>
+          <div class="dashboard-pills" id="permissions-list"></div>
         </article>
-        <article class="dashboard-card dashboard-card--review">
-          <header class="dashboard-card-head">
-            <h3>Mis clases</h3>
-            <span class="dashboard-pill">Gestion academica</span>
-          </header>
-          <ul class="topic-list">
-            <li>Ver clases matriculadas</li>
-            <li>Revisar progreso por clase</li>
-            <li>Entrar a actividades asignadas</li>
-          </ul>
-          <button type="button" class="btn btn-primary btn-block" id="review-action-btn">Ver mis clases</button>
-        </article>
-        <article class="dashboard-card dashboard-card--learn">
-          <header class="dashboard-card-head">
-            <h3>Aprender</h3>
-            <span class="dashboard-pill">Ruta recomendada</span>
-          </header>
-          <ul class="topic-list">
-            <li>Fundamentos de integracion</li>
-            <li>Aplicaciones geometricas y fisicas</li>
-            <li>Desafios de nivel avanzado</li>
-          </ul>
-          <button type="button" class="btn btn-primary btn-block" id="learn-action-btn">Comenzar aprendizaje</button>
-        </article>
+        <section>
+          <div class="metrics-grid" id="metrics-grid"></div>
+        </section>
+        <section>
+          <h3 class="dashboard-section-title">Accesos rapidos</h3>
+          <div class="quick-actions-grid" id="quick-actions-grid"></div>
+        </section>
+
+        <section id="professor-panel" class="role-panel hidden">
+          <div class="dashboard-two-columns">
+            <article class="panel-card">
+              <h3 class="panel-title">Crear estudiante</h3>
+              <p class="panel-subtitle">Crea cuenta con contrasena inicial para tu estudiante.</p>
+              <form id="create-student-form" class="panel-form panel-form-grid" novalidate>
+                <p id="create-student-message" class="auth-message hidden" role="alert"></p>
+                <label class="auth-field">
+                  <span>Correo institucional</span>
+                  <input type="email" name="email" placeholder="estudiante@udla.edu.co" required />
+                </label>
+                <label class="auth-field">
+                  <span>Nombre completo</span>
+                  <input type="text" name="nombre" placeholder="Nombre del estudiante" required />
+                </label>
+                <label class="auth-field">
+                  <span>Genero</span>
+                  <select name="genero" required>
+                    <option value="masculino">Masculino</option>
+                    <option value="femenino">Femenino</option>
+                    <option value="otro">Otro</option>
+                    <option value="prefiero_no_decir">Prefiero no decir</option>
+                  </select>
+                </label>
+                <label class="auth-field">
+                  <span>Celular</span>
+                  <input type="tel" name="celular" placeholder="3001234567" required />
+                </label>
+                <label class="auth-field">
+                  <span>Programa</span>
+                  <input type="text" name="programa" placeholder="Programa academico" required />
+                </label>
+                <label class="auth-field">
+                  <span>Semestre</span>
+                  <input type="number" name="semestre" min="1" max="20" step="1" value="1" required />
+                </label>
+                <label class="auth-field">
+                  <span>Matricula (opcional)</span>
+                  <input type="text" name="matricula" maxlength="32" />
+                </label>
+                <label class="auth-field">
+                  <span>Contrasena inicial</span>
+                  <input type="password" name="password" minlength="8" placeholder="Minimo 8 caracteres" required />
+                </label>
+                <button class="btn btn-primary btn-block auth-field-span-full" type="submit">Crear estudiante</button>
+              </form>
+            </article>
+            <article class="panel-card">
+              <h3 class="panel-title">Crear clase</h3>
+              <p class="panel-subtitle">Organiza grupos y cupos sin salir del panel.</p>
+              <form id="create-class-form" class="panel-form" novalidate>
+                <p id="create-class-message" class="auth-message hidden" role="alert"></p>
+                <label class="auth-field">
+                  <span>Nombre de la clase</span>
+                  <input type="text" name="nombre" placeholder="Calculo diferencial A" required />
+                </label>
+                <label class="auth-field">
+                  <span>Descripcion</span>
+                  <input type="text" name="descripcion" placeholder="Grupo con enfoque en integrales" />
+                </label>
+                <label class="auth-field">
+                  <span>Cupo</span>
+                  <input type="number" name="cupo" min="1" max="500" step="1" value="30" required />
+                </label>
+                <label class="auth-field">
+                  <span>Visibilidad</span>
+                  <select name="visibilidad">
+                    <option value="publica" selected>Publica (cualquier estudiante puede unirse)</option>
+                    <option value="privada">Privada (solo matricula el profesor)</option>
+                  </select>
+                </label>
+                <button class="btn btn-primary btn-block" type="submit">Crear clase</button>
+              </form>
+            </article>
+            <article class="panel-card">
+              <h3 class="panel-title">Matricular estudiante</h3>
+              <p class="panel-subtitle">Matricula por correo institucional o por matricula registrada.</p>
+              <form id="enroll-student-form" class="panel-form" novalidate>
+                <p id="enroll-student-message" class="auth-message hidden" role="alert"></p>
+                <label class="auth-field">
+                  <span>Clase</span>
+                  <select name="classId" id="enroll-class-select" required></select>
+                </label>
+                <label class="auth-field">
+                  <span>Correo del estudiante</span>
+                  <input type="email" name="studentEmail" placeholder="estudiante@udla.edu.co" />
+                </label>
+                <label class="auth-field">
+                  <span>O matricula</span>
+                  <input type="text" name="studentMatricula" placeholder="Solo si no usas correo" maxlength="32" />
+                </label>
+                <button class="btn btn-primary btn-block" type="submit">Matricular</button>
+              </form>
+            </article>
+          </div>
+          <article class="panel-card">
+            <h3 class="panel-title">Crear ejercicio</h3>
+            <p class="panel-subtitle">Publica actividades y define tema de repaso.</p>
+            <form id="create-exercise-form" class="panel-form panel-form-grid" novalidate>
+              <p id="create-exercise-message" class="auth-message hidden" role="alert"></p>
+              <label class="auth-field">
+                <span>Clase</span>
+                <select name="classId" id="exercise-class-select" required></select>
+              </label>
+              <label class="auth-field">
+                <span>Titulo</span>
+                <input type="text" name="titulo" placeholder="Taller de integrales por partes" required />
+              </label>
+              <label class="auth-field">
+                <span>Dificultad</span>
+                <select name="difficulty">
+                  <option value="basica">Basica</option>
+                  <option value="media" selected>Media</option>
+                  <option value="avanzada">Avanzada</option>
+                </select>
+              </label>
+              <label class="auth-field">
+                <span>Fecha limite</span>
+                <input type="date" name="dueDate" />
+              </label>
+              <label class="auth-field">
+                <span>Monedas al completar</span>
+                <input type="number" name="coinsReward" min="0" max="100000" step="1" value="0" />
+              </label>
+              <label class="auth-field">
+                <span>XP al completar</span>
+                <input type="number" name="xpReward" min="0" max="100000" step="1" value="0" />
+              </label>
+              <label class="auth-field auth-field-span-full">
+                <span>Tema de repaso (opcional)</span>
+                <input type="text" name="reviewTopic" placeholder="Ej. Integracion por partes" maxlength="180" />
+              </label>
+              <label class="auth-field auth-field-span-full">
+                <span>Descripcion</span>
+                <input type="text" name="descripcion" placeholder="Incluye desarrollo paso a paso" />
+              </label>
+              <button class="btn btn-primary btn-block auth-field-span-full" type="submit">Crear ejercicio</button>
+            </form>
+          </article>
+          <div class="dashboard-two-columns">
+            <article class="panel-card">
+              <h3 class="panel-title">Tus clases</h3>
+              <div class="panel-list" id="professor-classes-list"></div>
+            </article>
+            <article class="panel-card">
+              <h3 class="panel-title">Estudiantes recientes</h3>
+              <div class="panel-list" id="professor-students-list"></div>
+            </article>
+          </div>
+          <article class="panel-card">
+            <h3 class="panel-title">Ejercicios publicados</h3>
+            <div class="panel-list" id="professor-exercises-list"></div>
+          </article>
+          <article class="panel-card">
+            <h3 class="panel-title">Sugerencias</h3>
+            <div class="insights-list" id="professor-insights-list"></div>
+          </article>
+        </section>
+
+        <section id="student-panel" class="role-panel hidden">
+          <article class="panel-card">
+            <h3 class="panel-title">Clases publicas disponibles</h3>
+            <p class="panel-subtitle">Unete con un clic si la clase aun tiene cupo.</p>
+            <div class="panel-list" id="student-public-classes-list"></div>
+          </article>
+          <div class="dashboard-two-columns">
+            <article class="panel-card">
+              <h3 class="panel-title">Clases matriculadas</h3>
+              <div class="panel-list" id="student-classes-list"></div>
+            </article>
+            <article class="panel-card">
+              <h3 class="panel-title">Ejercicios activos</h3>
+              <div class="panel-list" id="student-exercises-list"></div>
+            </article>
+          </div>
+          <article class="panel-card">
+            <h3 class="panel-title">Sugerencias del sistema</h3>
+            <div class="insights-list" id="student-insights-list"></div>
+          </article>
+        </section>
       </div>
     </section>
 
@@ -349,10 +620,32 @@ const userDropdownEmail = document.querySelector<HTMLElement>("#user-dropdown-em
 const userLogoutBtn = document.querySelector<HTMLButtonElement>("#user-logout-btn");
 const homeSessionToast = document.querySelector<HTMLElement>("#home-session-toast");
 const dashboardSessionToast = document.querySelector<HTMLElement>("#dashboard-session-toast");
-const dashboardUserName = document.querySelector<HTMLElement>("#dashboard-user-name");
-const rankingActionBtn = document.querySelector<HTMLButtonElement>("#ranking-action-btn");
-const reviewActionBtn = document.querySelector<HTMLButtonElement>("#review-action-btn");
-const learnActionBtn = document.querySelector<HTMLButtonElement>("#learn-action-btn");
+const dashboardRoleBadge = document.querySelector<HTMLElement>("#dashboard-role-badge");
+const dashboardTitle = document.querySelector<HTMLElement>("#dashboard-title");
+const dashboardSubtitle = document.querySelector<HTMLElement>("#dashboard-subtitle");
+const permissionsList = document.querySelector<HTMLElement>("#permissions-list");
+const metricsGrid = document.querySelector<HTMLElement>("#metrics-grid");
+const quickActionsGrid = document.querySelector<HTMLElement>("#quick-actions-grid");
+const professorPanel = document.querySelector<HTMLElement>("#professor-panel");
+const studentPanel = document.querySelector<HTMLElement>("#student-panel");
+const createClassForm = document.querySelector<HTMLFormElement>("#create-class-form");
+const createClassMessage = document.querySelector<HTMLParagraphElement>("#create-class-message");
+const createStudentForm = document.querySelector<HTMLFormElement>("#create-student-form");
+const createStudentMessage = document.querySelector<HTMLParagraphElement>("#create-student-message");
+const enrollStudentForm = document.querySelector<HTMLFormElement>("#enroll-student-form");
+const enrollStudentMessage = document.querySelector<HTMLParagraphElement>("#enroll-student-message");
+const createExerciseForm = document.querySelector<HTMLFormElement>("#create-exercise-form");
+const createExerciseMessage = document.querySelector<HTMLParagraphElement>("#create-exercise-message");
+const enrollClassSelect = document.querySelector<HTMLSelectElement>("#enroll-class-select");
+const exerciseClassSelect = document.querySelector<HTMLSelectElement>("#exercise-class-select");
+const professorClassesList = document.querySelector<HTMLElement>("#professor-classes-list");
+const professorStudentsList = document.querySelector<HTMLElement>("#professor-students-list");
+const professorExercisesList = document.querySelector<HTMLElement>("#professor-exercises-list");
+const professorInsightsList = document.querySelector<HTMLElement>("#professor-insights-list");
+const studentClassesList = document.querySelector<HTMLElement>("#student-classes-list");
+const studentExercisesList = document.querySelector<HTMLElement>("#student-exercises-list");
+const studentPublicClassesList = document.querySelector<HTMLElement>("#student-public-classes-list");
+const studentInsightsList = document.querySelector<HTMLElement>("#student-insights-list");
 
 // Backend: VITE_API_URL en .env gana si existe. Si no, comenta una URL
 // y descomenta la otra: local (npm run dev) vs producción (Vercel).
@@ -371,29 +664,10 @@ const REGISTRATION_JWT_STORAGE_KEY = "todoak_registration_jwt";
 const USER_SESSION_KEY = "tesisamazonia_user_session";
 
 let authMode: "login" | "register" = "login";
-let toastHideTimer: number | undefined;
-
-type Role = "estudiante" | "profesor";
-
-type PendingRegistration = {
-  email: string;
-  nombre: string;
-  genero: string;
-  celular: string;
-  programa: string;
-  semestre: number;
-  password: string;
-  role: Role;
-};
-
+let homeToastHideTimer: number | undefined;
+let dashboardToastHideTimer: number | undefined;
 let pendingRegistration: PendingRegistration | null = null;
-
-type UserSession = {
-  userId: number;
-  email: string;
-  nombre: string;
-  role?: Role;
-};
+let dashboardData: DashboardResponse | null = null;
 
 function clearRegistrationToken(): void {
   sessionStorage.removeItem(REGISTRATION_JWT_STORAGE_KEY);
@@ -405,7 +679,7 @@ function getUserSession(): UserSession | null {
     if (!raw) {
       return null;
     }
-    const data = JSON.parse(raw) as UserSession;
+    const data = JSON.parse(raw) as Partial<UserSession>;
     if (
       typeof data.userId !== "number" ||
       typeof data.email !== "string" ||
@@ -413,7 +687,13 @@ function getUserSession(): UserSession | null {
     ) {
       return null;
     }
-    return data;
+    const role: Role = data.role === "profesor" ? "profesor" : "estudiante";
+    return {
+      userId: data.userId,
+      email: data.email,
+      nombre: data.nombre,
+      role,
+    };
   } catch {
     return null;
   }
@@ -471,10 +751,10 @@ function showHomeSessionToast(text: string): void {
   }
   homeSessionToast.textContent = text;
   homeSessionToast.classList.remove("hidden");
-  if (toastHideTimer !== undefined) {
-    window.clearTimeout(toastHideTimer);
+  if (homeToastHideTimer !== undefined) {
+    window.clearTimeout(homeToastHideTimer);
   }
-  toastHideTimer = window.setTimeout(() => {
+  homeToastHideTimer = window.setTimeout(() => {
     homeSessionToast.classList.add("hidden");
   }, 4500);
 }
@@ -485,12 +765,442 @@ function showDashboardSessionToast(text: string): void {
   }
   dashboardSessionToast.textContent = text;
   dashboardSessionToast.classList.remove("hidden");
-  if (toastHideTimer !== undefined) {
-    window.clearTimeout(toastHideTimer);
+  if (dashboardToastHideTimer !== undefined) {
+    window.clearTimeout(dashboardToastHideTimer);
   }
-  toastHideTimer = window.setTimeout(() => {
+  dashboardToastHideTimer = window.setTimeout(() => {
     dashboardSessionToast.classList.add("hidden");
   }, 4500);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function normalizeUserId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function formatDate(value: string | null): string {
+  if (!value) {
+    return "Sin fecha limite";
+  }
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Sin fecha limite";
+  }
+  return new Intl.DateTimeFormat("es-CO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(parsed);
+}
+
+function formatDifficulty(value: string): string {
+  if (value === "basica") {
+    return "Basica";
+  }
+  if (value === "avanzada") {
+    return "Avanzada";
+  }
+  return "Media";
+}
+
+function formatVisibilidad(value: string): string {
+  return value === "privada" ? "Privada" : "Publica";
+}
+
+function formatPermission(permission: string): string {
+  return permission.replaceAll("_", " ");
+}
+
+function exerciseStatusLabel(status: string): string {
+  return status === "entregado" ? "Completado" : "Pendiente";
+}
+
+function renderEmptyState(title: string, body: string): string {
+  return `
+    <article class="empty-state">
+      <p class="empty-state-title">${escapeHtml(title)}</p>
+      <p class="empty-state-text">${escapeHtml(body)}</p>
+    </article>
+  `;
+}
+
+function renderMetrics(items: MetricItem[]): void {
+  if (!metricsGrid) {
+    return;
+  }
+  metricsGrid.innerHTML = items
+    .map(
+      (item) => `
+        <article class="metric-card metric-card--${escapeHtml(item.accent)}">
+          <p class="metric-label">${escapeHtml(item.label)}</p>
+          <p class="metric-value">${escapeHtml(String(item.value))}</p>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderQuickActions(items: QuickAction[]): void {
+  if (!quickActionsGrid) {
+    return;
+  }
+  quickActionsGrid.innerHTML = items
+    .map(
+      (item) => `
+        <article class="quick-action-card">
+          <p class="quick-action-title">${escapeHtml(item.title)}</p>
+          <p class="quick-action-description">${escapeHtml(item.description)}</p>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function populateProfessorSelects(classes: ProfessorClass[]): void {
+  const options = classes.length
+    ? classes
+        .map(
+          (classItem) =>
+            `<option value="${classItem.id}">${escapeHtml(classItem.nombre)}</option>`,
+        )
+        .join("")
+    : `<option value="">Primero crea una clase</option>`;
+
+  if (enrollClassSelect) {
+    enrollClassSelect.innerHTML = options;
+    enrollClassSelect.disabled = classes.length === 0;
+  }
+  if (exerciseClassSelect) {
+    exerciseClassSelect.innerHTML = options;
+    exerciseClassSelect.disabled = classes.length === 0;
+  }
+}
+
+function renderProfessorDashboard(data: DashboardResponse): void {
+  if (!data.professorData) {
+    return;
+  }
+
+  populateProfessorSelects(data.professorData.classes);
+
+  if (professorClassesList) {
+    professorClassesList.innerHTML =
+      data.professorData.classes.length > 0
+        ? data.professorData.classes
+            .map(
+              (classItem) => `
+                <article class="list-card">
+                  <div class="list-card-top">
+                    <p class="list-card-title">${escapeHtml(classItem.nombre)}</p>
+                    <span class="list-chip">${escapeHtml(formatVisibilidad(classItem.visibilidad))}</span>
+                  </div>
+                  <p class="list-card-text">${escapeHtml(classItem.descripcion || "Sin descripcion")}</p>
+                  <div class="list-card-meta">
+                    <span>${classItem.totalStudents}/${classItem.cupo} estudiantes</span>
+                    <span>${classItem.totalExercises} ejercicios</span>
+                    <span>${classItem.averageProgress}% avance</span>
+                  </div>
+                </article>
+              `,
+            )
+            .join("")
+        : renderEmptyState(
+            "Aun no tienes clases",
+            "Crea una clase para empezar a matricular estudiantes y publicar ejercicios.",
+          );
+  }
+
+  if (professorStudentsList) {
+    professorStudentsList.innerHTML =
+      data.professorData.students.length > 0
+        ? data.professorData.students
+            .map(
+              (student) => `
+                <article class="list-card">
+                  <div class="list-card-top">
+                    <p class="list-card-title">${escapeHtml(student.nombre)}</p>
+                    <span class="list-chip">${student.progress}% progreso</span>
+                  </div>
+                  <p class="list-card-text">${escapeHtml(student.email)}</p>
+                  <div class="progress-track">
+                    <span class="progress-bar" style="width: ${Math.max(0, Math.min(100, student.progress))}%"></span>
+                  </div>
+                  <div class="list-card-meta">
+                    <span>${escapeHtml(student.className)}</span>
+                  </div>
+                </article>
+              `,
+            )
+            .join("")
+        : renderEmptyState(
+            "Sin estudiantes recientes",
+            "Las matriculas nuevas se veran aqui junto con su progreso.",
+          );
+  }
+
+  if (professorExercisesList) {
+    professorExercisesList.innerHTML =
+      data.professorData.exercises.length > 0
+        ? data.professorData.exercises
+            .map(
+              (exercise) => `
+                <article class="list-card">
+                  <div class="list-card-top">
+                    <p class="list-card-title">${escapeHtml(exercise.titulo)}</p>
+                    <span class="list-chip">${escapeHtml(formatDifficulty(exercise.dificultad))}</span>
+                  </div>
+                  <p class="list-card-text">${escapeHtml(exercise.descripcion || "Sin descripcion")}</p>
+                  ${
+                    exercise.reviewTopic
+                      ? `<div class="list-card-meta"><span class="topic-chip">Tema de repaso: ${escapeHtml(exercise.reviewTopic)}</span></div>`
+                      : ""
+                  }
+                  <div class="list-card-meta">
+                    <span>${escapeHtml(exercise.className)}</span>
+                    <span>${escapeHtml(formatDate(exercise.dueDate))}</span>
+                    <span>+${exercise.coinsReward} mon / +${exercise.xpReward} XP</span>
+                  </div>
+                </article>
+              `,
+            )
+            .join("")
+        : renderEmptyState(
+            "No has publicado ejercicios",
+            "Publica tu primer ejercicio para activar progreso y notificaciones.",
+          );
+  }
+
+  if (professorInsightsList) {
+    professorInsightsList.innerHTML = data.professorData.insights
+      .map(
+        (item) => `
+          <article class="insight-card">
+            <p>${escapeHtml(item)}</p>
+          </article>
+        `,
+      )
+      .join("");
+  }
+}
+
+function renderStudentDashboard(data: DashboardResponse): void {
+  if (!data.studentData) {
+    return;
+  }
+
+  const publicClasses = data.studentData.publicClasses ?? [];
+  if (studentPublicClassesList) {
+    studentPublicClassesList.innerHTML =
+      publicClasses.length > 0
+        ? publicClasses
+            .map(
+              (item) => `
+                <article class="list-card">
+                  <div class="list-card-top">
+                    <p class="list-card-title">${escapeHtml(item.nombre)}</p>
+                    <span class="list-chip">${item.enrolled}/${item.cupo} cupo</span>
+                  </div>
+                  <p class="list-card-text">${escapeHtml(item.descripcion || "Sin descripcion")}</p>
+                  <div class="list-card-meta">
+                    <span>Prof. ${escapeHtml(item.profesor)}</span>
+                  </div>
+                  <div class="list-card-actions">
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-small"
+                      data-join-class-id="${item.id}"
+                    >
+                      Unirme a la clase
+                    </button>
+                  </div>
+                </article>
+              `,
+            )
+            .join("")
+        : renderEmptyState(
+            "No hay clases publicas abiertas",
+            "Cuando exista una clase publica con cupo libre podras unirte aqui.",
+          );
+  }
+
+  if (studentClassesList) {
+    studentClassesList.innerHTML =
+      data.studentData.classes.length > 0
+        ? data.studentData.classes
+            .map(
+              (classItem) => `
+                <article class="list-card">
+                  <div class="list-card-top">
+                    <p class="list-card-title">${escapeHtml(classItem.nombre)}</p>
+                    <span class="list-chip">${classItem.progress}% progreso</span>
+                  </div>
+                  <p class="list-card-text">${escapeHtml(classItem.descripcion || "Sin descripcion")}</p>
+                  <div class="progress-track">
+                    <span class="progress-bar" style="width: ${Math.max(0, Math.min(100, classItem.progress))}%"></span>
+                  </div>
+                  <div class="list-card-meta">
+                    <span>Profesor: ${escapeHtml(classItem.profesor)}</span>
+                    <span>${classItem.completedExercises}/${classItem.totalExercises} ejercicios</span>
+                  </div>
+                </article>
+              `,
+            )
+            .join("")
+        : renderEmptyState(
+            "No tienes clases matriculadas",
+            "Cuando un profesor te agregue a una clase la veras aqui con su avance.",
+          );
+  }
+
+  if (studentExercisesList) {
+    studentExercisesList.innerHTML =
+      data.studentData.exercises.length > 0
+        ? data.studentData.exercises
+            .map(
+              (exercise) => `
+                <article class="list-card">
+                  <div class="list-card-top">
+                    <p class="list-card-title">${escapeHtml(exercise.titulo)}</p>
+                    <span class="list-chip">${escapeHtml(exerciseStatusLabel(exercise.status))}</span>
+                  </div>
+                  <p class="list-card-text">${escapeHtml(exercise.descripcion || "Sin descripcion")}</p>
+                  ${
+                    exercise.reviewTopic
+                      ? `<div class="list-card-meta"><span class="topic-chip">Tema de repaso: ${escapeHtml(exercise.reviewTopic)}</span></div>`
+                      : ""
+                  }
+                  <div class="list-card-meta">
+                    <span>${escapeHtml(exercise.className)}</span>
+                    <span>${escapeHtml(formatDifficulty(exercise.dificultad))}</span>
+                    <span>${escapeHtml(formatDate(exercise.dueDate))}</span>
+                  </div>
+                  ${
+                    exercise.status === "entregado"
+                      ? `<div class="list-card-actions">
+                          <span class="exercise-complete-tag">Completado</span>
+                        </div>`
+                      : `<div class="list-card-actions">
+                          <button
+                            type="button"
+                            class="btn btn-primary btn-small"
+                            data-complete-exercise-id="${exercise.id}"
+                          >
+                            Marcar como completado
+                          </button>
+                        </div>`
+                  }
+                </article>
+              `,
+            )
+            .join("")
+        : renderEmptyState(
+            "No tienes ejercicios activos",
+            "Cuando tu profesor publique actividades apareceran aqui.",
+          );
+  }
+
+  if (studentInsightsList) {
+    studentInsightsList.innerHTML = data.studentData.insights
+      .map(
+        (item) => `
+          <article class="insight-card">
+            <p>${escapeHtml(item)}</p>
+          </article>
+        `,
+      )
+      .join("");
+  }
+}
+
+function renderDashboard(data: DashboardResponse): void {
+  dashboardData = data;
+  if (dashboardRoleBadge) {
+    dashboardRoleBadge.textContent = data.user.roleLabel;
+  }
+  if (dashboardTitle) {
+    dashboardTitle.textContent =
+      data.user.role === "profesor"
+        ? `Hola ${data.user.nombre}, gestiona tus clases`
+        : `Hola ${data.user.nombre}, sigue tu progreso`;
+  }
+  if (dashboardSubtitle) {
+    dashboardSubtitle.textContent =
+      data.user.role === "profesor"
+        ? `Crea ejercicios, matricula estudiantes y revisa avances desde un solo panel. Programa: ${data.user.programa}.`
+        : `Revisa tus clases matriculadas, ejercicios pendientes y progreso promedio. Programa: ${data.user.programa}.`;
+  }
+  if (permissionsList) {
+    permissionsList.innerHTML = data.permissions
+      .map(
+        (permission) => `
+          <span class="dashboard-pill">${escapeHtml(formatPermission(permission))}</span>
+        `,
+      )
+      .join("");
+  }
+
+  renderMetrics(data.metrics);
+  renderQuickActions(data.quickActions);
+
+  const isProfessor = data.user.role === "profesor";
+  professorPanel?.classList.toggle("hidden", !isProfessor);
+  studentPanel?.classList.toggle("hidden", isProfessor);
+
+  if (isProfessor) {
+    renderProfessorDashboard(data);
+  } else {
+    renderStudentDashboard(data);
+  }
+}
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, init);
+  const data = (await response.json()) as T & ApiEnvelope;
+  if (!response.ok || !data.ok) {
+    throw new Error(data.message ?? "No se pudo completar la solicitud.");
+  }
+  return data;
+}
+
+async function loadDashboard(toastMessage?: string): Promise<boolean> {
+  const session = getUserSession();
+  if (!session) {
+    return false;
+  }
+
+  try {
+    const data = await requestJson<DashboardResponse>(
+      `/auth/dashboard?userId=${encodeURIComponent(String(session.userId))}`,
+    );
+    renderDashboard(data);
+    showDashboardShell();
+    if (toastMessage) {
+      showDashboardSessionToast(toastMessage);
+    }
+    return true;
+  } catch (error) {
+    showHomeSessionToast(
+      error instanceof Error ? error.message : "No se pudo cargar el panel.",
+    );
+    return false;
+  }
 }
 
 function resetCodeDigits(): void {
@@ -589,7 +1299,7 @@ function showHomeView(): void {
   applyHeaderAuthState();
 }
 
-function showDashboardView(toastText = ""): void {
+function showDashboardShell(): void {
   if (!homeView || !authView || !dashboardView) {
     return;
   }
@@ -607,16 +1317,10 @@ function showDashboardView(toastText = ""): void {
   homeView.classList.add("hidden");
   authView.classList.add("hidden");
   dashboardView.classList.remove("hidden");
-  if (dashboardUserName) {
-    dashboardUserName.textContent = session.nombre.trim() || "estudiante";
-  }
   tabButtons.forEach((button) => {
     button.classList.remove("is-active");
   });
   applyHeaderAuthState();
-  if (toastText) {
-    showDashboardSessionToast(toastText);
-  }
 }
 
 function setAuthMode(mode: "login" | "register"): void {
@@ -665,7 +1369,7 @@ tabButtons.forEach((button) => {
 
 goHomeButton?.addEventListener("click", () => {
   if (getUserSession()) {
-    showDashboardView();
+    void loadDashboard();
     return;
   }
   showHomeView();
@@ -962,41 +1666,43 @@ loginForm?.addEventListener("submit", async (event) => {
   showInlineMessage(authMessage, "", "");
 
   try {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const data = await requestJson<{
+      userId?: number;
+      nombre?: string;
+      email?: string;
+      role?: Role;
+      message?: string;
+    }>("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
     });
-    const data = (await res.json()) as {
-      ok?: boolean;
-      message?: string;
-      userId?: number;
-      nombre?: string;
-      email?: string;
-      role?: string;
-    };
-    if (!res.ok || !data.ok) {
-      showInlineMessage(authMessage, data.message ?? "No se pudo iniciar sesion.", "error");
+    const normalizedUserId = normalizeUserId(data.userId);
+    if (
+      normalizedUserId === null ||
+      typeof data.email !== "string" ||
+      typeof data.nombre !== "string" ||
+      (data.role !== "estudiante" && data.role !== "profesor")
+    ) {
+      showInlineMessage(authMessage, "El servidor devolvio una sesion incompleta.", "error");
       return;
     }
-    if (
-      typeof data.userId === "number" &&
-      typeof data.email === "string" &&
-      typeof data.nombre === "string"
-    ) {
-      saveUserSession({
-        userId: data.userId,
-        email: data.email,
-        nombre: data.nombre,
-        role: data.role === "profesor" ? "profesor" : "estudiante",
-      });
-    }
+    saveUserSession({
+      userId: normalizedUserId,
+      email: data.email,
+      nombre: data.nombre,
+      role: data.role,
+    });
     applyHeaderAuthState();
     loginForm.reset();
     showInlineMessage(authMessage, "", "");
-    showDashboardView(data.message ?? "Sesion iniciada con exito.");
-  } catch {
-    showInlineMessage(authMessage, "No hay conexion con el servidor.", "error");
+    await loadDashboard(data.message ?? "Sesion iniciada con exito.");
+  } catch (error) {
+    showInlineMessage(
+      authMessage,
+      error instanceof Error ? error.message : "No hay conexion con el servidor.",
+      "error",
+    );
   } finally {
     submitBtn?.removeAttribute("disabled");
   }
@@ -1015,21 +1721,281 @@ userMenuTrigger?.addEventListener("click", (e) => {
 
 userLogoutBtn?.addEventListener("click", () => {
   clearUserSession();
+  dashboardData = null;
   applyHeaderAuthState();
   closeUserMenu();
   showHomeView();
 });
 
-rankingActionBtn?.addEventListener("click", () => {
-  showDashboardSessionToast("El ranking completo estara disponible en la siguiente iteracion.");
+createStudentForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const session = getUserSession();
+  if (!session || session.role !== "profesor" || !createStudentForm) {
+    return;
+  }
+  const formData = new FormData(createStudentForm);
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!isUdlaEmailClient(email)) {
+    showInlineMessage(createStudentMessage, "El correo debe ser institucional: @udla.edu.co", "error");
+    return;
+  }
+  if (password.length < 8) {
+    showInlineMessage(createStudentMessage, "La contrasena debe tener al menos 8 caracteres.", "error");
+    return;
+  }
+  const submitButton = createStudentForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+  submitButton?.setAttribute("disabled", "");
+  showInlineMessage(createStudentMessage, "", "");
+  try {
+    const data = await requestJson<{ message?: string }>("/auth/professor/create-student", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        professorId: session.userId,
+        email,
+        nombre: String(formData.get("nombre") ?? "").trim(),
+        genero: String(formData.get("genero") ?? ""),
+        celular: String(formData.get("celular") ?? "").trim(),
+        programa: String(formData.get("programa") ?? "").trim(),
+        semestre: Number(formData.get("semestre") ?? 1),
+        matricula: String(formData.get("matricula") ?? "").trim(),
+        password,
+      }),
+    });
+    createStudentForm.reset();
+    showInlineMessage(createStudentMessage, data.message ?? "Estudiante creado correctamente.", "success");
+    await loadDashboard();
+  } catch (error) {
+    showInlineMessage(
+      createStudentMessage,
+      error instanceof Error ? error.message : "No se pudo crear el estudiante.",
+      "error",
+    );
+  } finally {
+    submitButton?.removeAttribute("disabled");
+  }
 });
 
-reviewActionBtn?.addEventListener("click", () => {
-  showDashboardSessionToast("Muy pronto abriremos tu listado completo de clases y su progreso.");
+createClassForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const session = getUserSession();
+  if (!session || session.role !== "profesor" || !createClassForm) {
+    return;
+  }
+  const formData = new FormData(createClassForm);
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  if (!nombre) {
+    showInlineMessage(createClassMessage, "El nombre de la clase es obligatorio.", "error");
+    return;
+  }
+  const submitButton = createClassForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+  submitButton?.setAttribute("disabled", "");
+  showInlineMessage(createClassMessage, "", "");
+  try {
+    const data = await requestJson<{ message?: string }>("/auth/classes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        professorId: session.userId,
+        nombre,
+        descripcion: String(formData.get("descripcion") ?? "").trim(),
+        cupo: Number(formData.get("cupo") ?? 30),
+        visibilidad: String(formData.get("visibilidad") ?? "publica"),
+      }),
+    });
+    createClassForm.reset();
+    const cupoInput = createClassForm.elements.namedItem("cupo");
+    if (cupoInput instanceof HTMLInputElement) {
+      cupoInput.value = "30";
+    }
+    showInlineMessage(createClassMessage, data.message ?? "Clase creada correctamente.", "success");
+    await loadDashboard(data.message ?? "Clase creada correctamente.");
+  } catch (error) {
+    showInlineMessage(
+      createClassMessage,
+      error instanceof Error ? error.message : "No se pudo crear la clase.",
+      "error",
+    );
+  } finally {
+    submitButton?.removeAttribute("disabled");
+  }
 });
 
-learnActionBtn?.addEventListener("click", () => {
-  showDashboardSessionToast("La ruta de aprendizaje detallada estara lista en la siguiente fase.");
+enrollStudentForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const session = getUserSession();
+  if (!session || session.role !== "profesor" || !enrollStudentForm) {
+    return;
+  }
+  const formData = new FormData(enrollStudentForm);
+  const classId = normalizeUserId(formData.get("classId"));
+  const studentEmail = String(formData.get("studentEmail") ?? "").trim().toLowerCase();
+  const studentMatriculaRaw = String(formData.get("studentMatricula") ?? "").trim();
+  const studentMatricula = studentMatriculaRaw
+    ? studentMatriculaRaw.toUpperCase().replace(/\s+/g, "")
+    : "";
+
+  if (classId === null) {
+    showInlineMessage(enrollStudentMessage, "Selecciona una clase.", "error");
+    return;
+  }
+  if ((!studentEmail && !studentMatricula) || (studentEmail && studentMatricula)) {
+    showInlineMessage(
+      enrollStudentMessage,
+      "Indica solo el correo institucional o solo la matricula del estudiante.",
+      "error",
+    );
+    return;
+  }
+  if (studentEmail && !isUdlaEmailClient(studentEmail)) {
+    showInlineMessage(enrollStudentMessage, "El correo debe ser @udla.edu.co", "error");
+    return;
+  }
+  if (studentMatricula && !/^[A-Z0-9_-]{4,32}$/.test(studentMatricula)) {
+    showInlineMessage(enrollStudentMessage, "La matricula no tiene un formato valido.", "error");
+    return;
+  }
+
+  const submitButton = enrollStudentForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+  submitButton?.setAttribute("disabled", "");
+  showInlineMessage(enrollStudentMessage, "", "");
+  try {
+    const data = await requestJson<{ message?: string }>(`/auth/classes/${classId}/enroll`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        studentEmail
+          ? { professorId: session.userId, studentEmail }
+          : { professorId: session.userId, studentMatricula },
+      ),
+    });
+    enrollStudentForm.reset();
+    showInlineMessage(
+      enrollStudentMessage,
+      data.message ?? "Estudiante matriculado correctamente.",
+      "success",
+    );
+    await loadDashboard(data.message ?? "Estudiante matriculado correctamente.");
+  } catch (error) {
+    showInlineMessage(
+      enrollStudentMessage,
+      error instanceof Error ? error.message : "No se pudo matricular al estudiante.",
+      "error",
+    );
+  } finally {
+    submitButton?.removeAttribute("disabled");
+  }
+});
+
+createExerciseForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const session = getUserSession();
+  if (!session || session.role !== "profesor" || !createExerciseForm) {
+    return;
+  }
+  const formData = new FormData(createExerciseForm);
+  const classId = normalizeUserId(formData.get("classId"));
+  const titulo = String(formData.get("titulo") ?? "").trim();
+  if (classId === null || !titulo) {
+    showInlineMessage(createExerciseMessage, "Selecciona una clase y define un titulo.", "error");
+    return;
+  }
+  const submitButton = createExerciseForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+  submitButton?.setAttribute("disabled", "");
+  showInlineMessage(createExerciseMessage, "", "");
+  try {
+    const data = await requestJson<{ message?: string }>("/auth/exercises", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        professorId: session.userId,
+        classId,
+        titulo,
+        descripcion: String(formData.get("descripcion") ?? "").trim(),
+        difficulty: String(formData.get("difficulty") ?? "media"),
+        dueDate: String(formData.get("dueDate") ?? "").trim(),
+        coinsReward: Number(formData.get("coinsReward") ?? 0),
+        xpReward: Number(formData.get("xpReward") ?? 0),
+        reviewTopic: String(formData.get("reviewTopic") ?? "").trim(),
+      }),
+    });
+    createExerciseForm.reset();
+    showInlineMessage(
+      createExerciseMessage,
+      data.message ?? "Ejercicio creado correctamente.",
+      "success",
+    );
+    await loadDashboard(data.message ?? "Ejercicio creado correctamente.");
+  } catch (error) {
+    showInlineMessage(
+      createExerciseMessage,
+      error instanceof Error ? error.message : "No se pudo crear el ejercicio.",
+      "error",
+    );
+  } finally {
+    submitButton?.removeAttribute("disabled");
+  }
+});
+
+studentExercisesList?.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const button = target.closest<HTMLButtonElement>("[data-complete-exercise-id]");
+  if (!button) {
+    return;
+  }
+  const session = getUserSession();
+  if (!session || session.role !== "estudiante") {
+    return;
+  }
+  const exerciseId = normalizeUserId(button.dataset.completeExerciseId);
+  if (exerciseId === null) {
+    return;
+  }
+  button.disabled = true;
+  try {
+    const data = await requestJson<{ message?: string }>(`/auth/exercises/${exerciseId}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studentId: session.userId }),
+    });
+    await loadDashboard(data.message ?? "Ejercicio marcado como completado.");
+  } catch {
+    button.disabled = false;
+  }
+});
+
+studentPublicClassesList?.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const button = target.closest<HTMLButtonElement>("[data-join-class-id]");
+  if (!button) {
+    return;
+  }
+  const session = getUserSession();
+  if (!session || session.role !== "estudiante") {
+    return;
+  }
+  const classId = normalizeUserId(button.dataset.joinClassId);
+  if (classId === null) {
+    return;
+  }
+  button.disabled = true;
+  try {
+    const data = await requestJson<{ message?: string }>(`/auth/classes/${classId}/join-public`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studentId: session.userId }),
+    });
+    await loadDashboard(data.message ?? "Te uniste a la clase.");
+  } catch {
+    button.disabled = false;
+  }
 });
 
 document.addEventListener("click", () => {
@@ -1041,7 +2007,7 @@ userMenu?.addEventListener("click", (e) => {
 });
 
 if (getUserSession()) {
-  showDashboardView();
+  void loadDashboard();
 } else {
   showHomeView();
 }
