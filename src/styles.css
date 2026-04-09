@@ -827,6 +827,61 @@ h1 span {
   gap: 1rem;
 }
 
+#professor-panel.professor-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, 270px) minmax(0, 1fr);
+  gap: 1.35rem;
+  align-items: stretch;
+}
+
+.professor-sidebar {
+  position: sticky;
+  top: 5.25rem;
+  align-self: start;
+  padding: 0.9rem 0.8rem;
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(8, 16, 32, 0.96), rgba(4, 8, 18, 0.94));
+  border: 1px solid rgba(8, 216, 199, 0.22);
+  box-shadow: 0 16px 48px rgba(2, 5, 14, 0.42);
+}
+
+.professor-sidebar-label {
+  margin: 0 0 0.7rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8ff6ed;
+}
+
+.professor-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#professor-panel .professor-sidebar .subnav-btn {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+  min-width: 0;
+  flex: none;
+}
+
+.professor-main {
+  min-width: 0;
+  max-height: calc(100vh - 5.75rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.35rem;
+  scrollbar-gutter: stable;
+}
+
+#professor-panel .professor-main .panel-card--solo {
+  max-width: 100%;
+  margin-inline: 0;
+}
+
 .dashboard-subnav {
   display: flex;
   flex-wrap: wrap;
@@ -1124,6 +1179,35 @@ h1 span {
 .floating-7 { top: 48%; right: 17%; }
 .floating-8 { top: 66%; right: 11%; font-size: clamp(1.85rem, 4.8vw, 3.2rem); }
 .floating-9 { top: 79%; right: 22%; }
+
+@media (max-width: 960px) {
+  #professor-panel.professor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .professor-sidebar {
+    position: relative;
+    top: auto;
+  }
+
+  .professor-sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  #professor-panel .professor-sidebar .subnav-btn {
+    flex: 1 1 calc(50% - 0.3rem);
+    min-width: min(160px, 100%);
+    text-align: center;
+  }
+
+  .professor-main {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+  }
+}
 
 @media (max-width: 760px) {
   .hero {

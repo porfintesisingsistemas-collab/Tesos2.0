@@ -247,22 +247,26 @@ app.innerHTML = `
           <div class="quick-actions-grid" id="quick-actions-grid"></div>
         </section>
 
-        <section id="professor-panel" class="role-panel hidden">
-          <nav class="dashboard-subnav" role="tablist" aria-label="Secciones del profesor">
-            <button type="button" class="subnav-btn is-active" role="tab" data-prof-tab="resumen" aria-selected="true">
-              Resumen
-            </button>
-            <button type="button" class="subnav-btn" role="tab" data-prof-tab="estudiantes" aria-selected="false">
-              Nuevo estudiante
-            </button>
-            <button type="button" class="subnav-btn" role="tab" data-prof-tab="clases" aria-selected="false">
-              Clases y matricula
-            </button>
-            <button type="button" class="subnav-btn" role="tab" data-prof-tab="ejercicios" aria-selected="false">
-              Nuevo ejercicio
-            </button>
-          </nav>
+        <section id="professor-panel" class="role-panel professor-layout hidden">
+          <aside class="professor-sidebar" aria-label="Menu del profesor">
+            <p class="professor-sidebar-label">Panel</p>
+            <nav class="professor-sidebar-nav" role="tablist">
+              <button type="button" class="subnav-btn professor-sidebar-link is-active" role="tab" data-prof-tab="resumen" aria-selected="true">
+                Resumen
+              </button>
+              <button type="button" class="subnav-btn professor-sidebar-link" role="tab" data-prof-tab="estudiantes" aria-selected="false">
+                Nuevo estudiante
+              </button>
+              <button type="button" class="subnav-btn professor-sidebar-link" role="tab" data-prof-tab="clases" aria-selected="false">
+                Clases y matricula
+              </button>
+              <button type="button" class="subnav-btn professor-sidebar-link" role="tab" data-prof-tab="ejercicios" aria-selected="false">
+                Nuevo ejercicio
+              </button>
+            </nav>
+          </aside>
 
+          <div class="professor-main">
           <div id="professor-tab-resumen" class="professor-tab" role="tabpanel" data-prof-panel="resumen">
             <div class="dashboard-two-columns">
               <article class="panel-card">
@@ -448,6 +452,7 @@ app.innerHTML = `
                 <button class="btn btn-primary btn-block auth-field-span-full" type="submit">Crear ejercicio</button>
               </form>
             </article>
+          </div>
           </div>
         </section>
 
@@ -1231,6 +1236,7 @@ function setProfessorTab(tab: ProfessorTabId): void {
     const panelId = el.id.replace("professor-tab-", "") as ProfessorTabId;
     el.classList.toggle("hidden", panelId !== tab);
   });
+  professorPanel.querySelector<HTMLElement>(".professor-main")?.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function setStudentTab(tab: StudentTabId): void {
@@ -1263,7 +1269,7 @@ function renderDashboard(data: DashboardResponse): void {
   if (dashboardSubtitle) {
     dashboardSubtitle.textContent =
       data.user.role === "profesor"
-        ? `Usa las pestañas abajo para ver el resumen o abrir cada tarea por separado. Programa: ${data.user.programa}.`
+        ? `Usa el menu izquierdo para cambiar de seccion; solo se muestra el contenido elegido. Programa: ${data.user.programa}.`
         : `Resumen de tus clases y ejercicios; en otra pestaña puedes unirte a clases publicas. Programa: ${data.user.programa}.`;
   }
   if (permissionsList) {
