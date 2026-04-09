@@ -778,6 +778,40 @@ h1 span {
   gap: 1rem;
 }
 
+.dashboard-banner--minimal {
+  margin-top: 4.5rem;
+  padding: 1rem 1.1rem;
+  max-width: 42rem;
+}
+
+.dashboard-banner--minimal .dashboard-title {
+  font-size: clamp(1.35rem, 3.2vw, 1.85rem);
+}
+
+.dashboard-banner--minimal .dashboard-subtitle {
+  margin-top: 0.4rem;
+  font-size: 0.92rem;
+}
+
+.panel-welcome {
+  padding: 1.35rem 1.5rem;
+}
+
+.panel-welcome-kicker {
+  margin: 0 0 0.65rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f3f5ff;
+}
+
+.panel-welcome-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 36rem;
+}
+
 .dashboard-title {
   font-size: clamp(1.7rem, 4vw, 2.5rem);
   line-height: 1.1;

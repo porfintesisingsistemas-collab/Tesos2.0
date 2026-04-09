@@ -253,27 +253,22 @@ app.innerHTML = `
     <section id="dashboard-view" class="hero-content dashboard-view hidden">
       <div id="dashboard-session-toast" class="home-toast hidden" role="status" aria-live="polite"></div>
       <div class="dashboard-shell">
-        <article class="dashboard-banner">
+        <article class="dashboard-banner dashboard-banner--minimal">
           <div>
             <span class="badge" id="dashboard-role-badge">Panel</span>
-            <h2 class="dashboard-title" id="dashboard-title">Tu panel</h2>
+            <h2 class="dashboard-title" id="dashboard-title">Bienvenido</h2>
             <p class="dashboard-subtitle" id="dashboard-subtitle"></p>
           </div>
-          <div class="dashboard-pills" id="permissions-list"></div>
         </article>
-        <section>
-          <div class="metrics-grid" id="metrics-grid"></div>
-        </section>
-        <section>
-          <h3 class="dashboard-section-title">Accesos rapidos</h3>
-          <div class="quick-actions-grid" id="quick-actions-grid"></div>
-        </section>
 
         <section id="professor-panel" class="role-panel professor-layout hidden">
           <aside class="professor-sidebar" aria-label="Menu del profesor">
-            <p class="professor-sidebar-label">Panel</p>
+            <p class="professor-sidebar-label">Menu</p>
             <nav class="professor-sidebar-nav" role="tablist">
-              <button type="button" class="subnav-btn professor-sidebar-link is-active" role="tab" data-prof-tab="resumen" aria-selected="true">
+              <button type="button" class="subnav-btn professor-sidebar-link is-active" role="tab" data-prof-tab="inicio" aria-selected="true">
+                Inicio
+              </button>
+              <button type="button" class="subnav-btn professor-sidebar-link" role="tab" data-prof-tab="resumen" aria-selected="false">
                 Resumen
               </button>
               <button type="button" class="subnav-btn professor-sidebar-link" role="tab" data-prof-tab="estudiantes" aria-selected="false">
@@ -289,7 +284,15 @@ app.innerHTML = `
           </aside>
 
           <div class="professor-main">
-          <div id="professor-tab-resumen" class="professor-tab" role="tabpanel" data-prof-panel="resumen">
+          <div id="professor-tab-inicio" class="professor-tab" role="tabpanel" data-prof-panel="inicio">
+            <article class="panel-card panel-welcome">
+              <p class="panel-welcome-kicker" id="professor-welcome-kicker">Bienvenido/a</p>
+              <p class="panel-welcome-text">
+                Usa el menu de la izquierda para ver el resumen de tus clases, registrar estudiantes, crear clases o publicar ejercicios.
+              </p>
+            </article>
+          </div>
+          <div id="professor-tab-resumen" class="professor-tab hidden" role="tabpanel" data-prof-panel="resumen">
             <div class="dashboard-two-columns">
               <article class="panel-card">
                 <h3 class="panel-title">Tus clases</h3>
@@ -480,9 +483,12 @@ app.innerHTML = `
 
         <section id="student-panel" class="role-panel student-layout hidden">
           <aside class="student-sidebar" aria-label="Menu del estudiante">
-            <p class="student-sidebar-label">Tu espacio</p>
+            <p class="student-sidebar-label">Menu</p>
             <nav class="student-sidebar-nav" role="tablist">
-              <button type="button" class="subnav-btn student-sidebar-link is-active" role="tab" data-student-tab="resumen" aria-selected="true">
+              <button type="button" class="subnav-btn student-sidebar-link is-active" role="tab" data-student-tab="inicio" aria-selected="true">
+                Inicio
+              </button>
+              <button type="button" class="subnav-btn student-sidebar-link" role="tab" data-student-tab="resumen" aria-selected="false">
                 Resumen
               </button>
               <button type="button" class="subnav-btn student-sidebar-link" role="tab" data-student-tab="explorar" aria-selected="false">
@@ -492,7 +498,15 @@ app.innerHTML = `
           </aside>
 
           <div class="student-main">
-          <div id="student-tab-resumen" class="student-tab" role="tabpanel" data-student-panel="resumen">
+          <div id="student-tab-inicio" class="student-tab" role="tabpanel" data-student-panel="inicio">
+            <article class="panel-card panel-welcome">
+              <p class="panel-welcome-kicker" id="student-welcome-kicker">Bienvenido/a</p>
+              <p class="panel-welcome-text">
+                Elige en el menu lateral si quieres ver tu resumen de clases y tareas o explorar clases publicas para unirte.
+              </p>
+            </article>
+          </div>
+          <div id="student-tab-resumen" class="student-tab hidden" role="tabpanel" data-student-panel="resumen">
             <div class="dashboard-two-columns">
               <article class="panel-card">
                 <h3 class="panel-title">Clases matriculadas</h3>
@@ -720,9 +734,6 @@ const dashboardSessionToast = document.querySelector<HTMLElement>("#dashboard-se
 const dashboardRoleBadge = document.querySelector<HTMLElement>("#dashboard-role-badge");
 const dashboardTitle = document.querySelector<HTMLElement>("#dashboard-title");
 const dashboardSubtitle = document.querySelector<HTMLElement>("#dashboard-subtitle");
-const permissionsList = document.querySelector<HTMLElement>("#permissions-list");
-const metricsGrid = document.querySelector<HTMLElement>("#metrics-grid");
-const quickActionsGrid = document.querySelector<HTMLElement>("#quick-actions-grid");
 const professorPanel = document.querySelector<HTMLElement>("#professor-panel");
 const studentPanel = document.querySelector<HTMLElement>("#student-panel");
 const createClassForm = document.querySelector<HTMLFormElement>("#create-class-form");
@@ -925,10 +936,6 @@ function formatVisibilidad(value: string): string {
   return value === "privada" ? "Privada" : "Publica";
 }
 
-function formatPermission(permission: string): string {
-  return permission.replaceAll("_", " ");
-}
-
 function desmosGraphToggleRow(exerciseId: number, graphLatex: string): string {
   const g = graphLatex.trim();
   if (!g) {
@@ -960,38 +967,6 @@ function renderEmptyState(title: string, body: string): string {
       <p class="empty-state-text">${escapeHtml(body)}</p>
     </article>
   `;
-}
-
-function renderMetrics(items: MetricItem[]): void {
-  if (!metricsGrid) {
-    return;
-  }
-  metricsGrid.innerHTML = items
-    .map(
-      (item) => `
-        <article class="metric-card metric-card--${escapeHtml(item.accent)}">
-          <p class="metric-label">${escapeHtml(item.label)}</p>
-          <p class="metric-value">${escapeHtml(String(item.value))}</p>
-        </article>
-      `,
-    )
-    .join("");
-}
-
-function renderQuickActions(items: QuickAction[]): void {
-  if (!quickActionsGrid) {
-    return;
-  }
-  quickActionsGrid.innerHTML = items
-    .map(
-      (item) => `
-        <article class="quick-action-card">
-          <p class="quick-action-title">${escapeHtml(item.title)}</p>
-          <p class="quick-action-description">${escapeHtml(item.description)}</p>
-        </article>
-      `,
-    )
-    .join("");
 }
 
 function populateProfessorSelects(classes: ProfessorClass[]): void {
@@ -1252,8 +1227,8 @@ function renderStudentDashboard(data: DashboardResponse): void {
   }
 }
 
-type ProfessorTabId = "resumen" | "estudiantes" | "clases" | "ejercicios";
-type StudentTabId = "resumen" | "explorar";
+type ProfessorTabId = "inicio" | "resumen" | "estudiantes" | "clases" | "ejercicios";
+type StudentTabId = "inicio" | "resumen" | "explorar";
 
 function setProfessorTab(tab: ProfessorTabId): void {
   if (!professorPanel) {
@@ -1293,29 +1268,23 @@ function renderDashboard(data: DashboardResponse): void {
     dashboardRoleBadge.textContent = data.user.roleLabel;
   }
   if (dashboardTitle) {
-    dashboardTitle.textContent =
-      data.user.role === "profesor"
-        ? `Hola ${data.user.nombre}, gestiona tus clases`
-        : `Hola ${data.user.nombre}, sigue tu progreso`;
+    const first = data.user.nombre.trim().split(/\s+/)[0] ?? data.user.nombre;
+    dashboardTitle.textContent = `Hola, ${first}`;
   }
   if (dashboardSubtitle) {
     dashboardSubtitle.textContent =
       data.user.role === "profesor"
-        ? `Usa el menu izquierdo para cambiar de seccion; solo se muestra el contenido elegido. Programa: ${data.user.programa}.`
-        : `Menu a la izquierda para cambiar de seccion. Programa: ${data.user.programa}.`;
+        ? "Selecciona una opcion en el menu lateral."
+        : "Selecciona una opcion en el menu lateral.";
   }
-  if (permissionsList) {
-    permissionsList.innerHTML = data.permissions
-      .map(
-        (permission) => `
-          <span class="dashboard-pill">${escapeHtml(formatPermission(permission))}</span>
-        `,
-      )
-      .join("");
+  const professorWelcomeKicker = document.getElementById("professor-welcome-kicker");
+  if (professorWelcomeKicker && data.user.role === "profesor") {
+    professorWelcomeKicker.textContent = `Bienvenido/a, ${data.user.nombre.trim() || "docente"}`;
   }
-
-  renderMetrics(data.metrics);
-  renderQuickActions(data.quickActions);
+  const studentWelcomeKicker = document.getElementById("student-welcome-kicker");
+  if (studentWelcomeKicker && data.user.role === "estudiante") {
+    studentWelcomeKicker.textContent = `Bienvenido/a, ${data.user.nombre.trim() || "estudiante"}`;
+  }
 
   if (studentTrophyXp && data.user.role === "estudiante") {
     const xp = data.user.xpTotal ?? 0;
@@ -1328,10 +1297,10 @@ function renderDashboard(data: DashboardResponse): void {
   studentPanel?.classList.toggle("hidden", isProfessor);
 
   if (isProfessor) {
-    setProfessorTab("resumen");
+    setProfessorTab("inicio");
     renderProfessorDashboard(data);
   } else {
-    setStudentTab("resumen");
+    setStudentTab("inicio");
     renderStudentDashboard(data);
   }
 }
@@ -1547,7 +1516,13 @@ professorPanel?.addEventListener("click", (event) => {
     return;
   }
   const tab = btn.getAttribute("data-prof-tab") as ProfessorTabId | null;
-  if (tab === "resumen" || tab === "estudiantes" || tab === "clases" || tab === "ejercicios") {
+  if (
+    tab === "inicio" ||
+    tab === "resumen" ||
+    tab === "estudiantes" ||
+    tab === "clases" ||
+    tab === "ejercicios"
+  ) {
     setProfessorTab(tab);
   }
 });
@@ -1558,7 +1533,7 @@ studentPanel?.addEventListener("click", (event) => {
     return;
   }
   const tab = btn.getAttribute("data-student-tab") as StudentTabId | null;
-  if (tab === "resumen" || tab === "explorar") {
+  if (tab === "inicio" || tab === "resumen" || tab === "explorar") {
     setStudentTab(tab);
   }
 });
