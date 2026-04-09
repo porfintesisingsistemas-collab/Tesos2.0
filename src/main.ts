@@ -1,4 +1,5 @@
 import "./styles.css";
+import { destroyDesmosGraph, mountDesmosGraph } from "./desmos.js";
 
 type Role = "estudiante" | "profesor";
 
@@ -59,6 +60,8 @@ type ProfessorExercise = {
   titulo: string;
   descripcion: string;
   reviewTopic: string;
+  /** Expresion LaTeX compatible con Desmos (ej. y=x^2) */
+  graphLatex: string;
   dificultad: string;
   dueDate: string | null;
   className: string;
@@ -89,6 +92,7 @@ type StudentExercise = {
   titulo: string;
   descripcion: string;
   reviewTopic: string;
+  graphLatex: string;
   dificultad: string;
   dueDate: string | null;
   className: string;
@@ -244,10 +248,46 @@ app.innerHTML = `
         </section>
 
         <section id="professor-panel" class="role-panel hidden">
-          <div class="dashboard-two-columns">
+          <nav class="dashboard-subnav" role="tablist" aria-label="Secciones del profesor">
+            <button type="button" class="subnav-btn is-active" role="tab" data-prof-tab="resumen" aria-selected="true">
+              Resumen
+            </button>
+            <button type="button" class="subnav-btn" role="tab" data-prof-tab="estudiantes" aria-selected="false">
+              Nuevo estudiante
+            </button>
+            <button type="button" class="subnav-btn" role="tab" data-prof-tab="clases" aria-selected="false">
+              Clases y matricula
+            </button>
+            <button type="button" class="subnav-btn" role="tab" data-prof-tab="ejercicios" aria-selected="false">
+              Nuevo ejercicio
+            </button>
+          </nav>
+
+          <div id="professor-tab-resumen" class="professor-tab" role="tabpanel" data-prof-panel="resumen">
+            <div class="dashboard-two-columns">
+              <article class="panel-card">
+                <h3 class="panel-title">Tus clases</h3>
+                <div class="panel-list" id="professor-classes-list"></div>
+              </article>
+              <article class="panel-card">
+                <h3 class="panel-title">Estudiantes recientes</h3>
+                <div class="panel-list" id="professor-students-list"></div>
+              </article>
+            </div>
             <article class="panel-card">
-              <h3 class="panel-title">Crear estudiante</h3>
-              <p class="panel-subtitle">Crea cuenta con contrasena inicial para tu estudiante.</p>
+              <h3 class="panel-title">Ejercicios publicados</h3>
+              <div class="panel-list" id="professor-exercises-list"></div>
+            </article>
+            <article class="panel-card">
+              <h3 class="panel-title">Sugerencias</h3>
+              <div class="insights-list" id="professor-insights-list"></div>
+            </article>
+          </div>
+
+          <div id="professor-tab-estudiantes" class="professor-tab hidden" role="tabpanel" data-prof-panel="estudiantes">
+            <article class="panel-card panel-card--solo">
+              <h3 class="panel-title">Registrar estudiante</h3>
+              <p class="panel-subtitle">Crea la cuenta institucional con una contrasena inicial; el alumno podra cambiarla luego.</p>
               <form id="create-student-form" class="panel-form panel-form-grid" novalidate>
                 <p id="create-student-message" class="auth-message hidden" role="alert"></p>
                 <label class="auth-field">
@@ -290,138 +330,161 @@ app.innerHTML = `
                 <button class="btn btn-primary btn-block auth-field-span-full" type="submit">Crear estudiante</button>
               </form>
             </article>
-            <article class="panel-card">
-              <h3 class="panel-title">Crear clase</h3>
-              <p class="panel-subtitle">Organiza grupos y cupos sin salir del panel.</p>
-              <form id="create-class-form" class="panel-form" novalidate>
-                <p id="create-class-message" class="auth-message hidden" role="alert"></p>
-                <label class="auth-field">
-                  <span>Nombre de la clase</span>
-                  <input type="text" name="nombre" placeholder="Calculo diferencial A" required />
-                </label>
-                <label class="auth-field">
-                  <span>Descripcion</span>
-                  <input type="text" name="descripcion" placeholder="Grupo con enfoque en integrales" />
-                </label>
-                <label class="auth-field">
-                  <span>Cupo</span>
-                  <input type="number" name="cupo" min="1" max="500" step="1" value="30" required />
-                </label>
-                <label class="auth-field">
-                  <span>Visibilidad</span>
-                  <select name="visibilidad">
-                    <option value="publica" selected>Publica (cualquier estudiante puede unirse)</option>
-                    <option value="privada">Privada (solo matricula el profesor)</option>
-                  </select>
-                </label>
-                <button class="btn btn-primary btn-block" type="submit">Crear clase</button>
-              </form>
-            </article>
-            <article class="panel-card">
-              <h3 class="panel-title">Matricular estudiante</h3>
-              <p class="panel-subtitle">Matricula por correo institucional o por matricula registrada.</p>
-              <form id="enroll-student-form" class="panel-form" novalidate>
-                <p id="enroll-student-message" class="auth-message hidden" role="alert"></p>
+          </div>
+
+          <div id="professor-tab-clases" class="professor-tab hidden" role="tabpanel" data-prof-panel="clases">
+            <div class="dashboard-two-columns">
+              <article class="panel-card">
+                <h3 class="panel-title">Crear clase</h3>
+                <p class="panel-subtitle">Define nombre, cupo y si la clase es publica o solo por matricula.</p>
+                <form id="create-class-form" class="panel-form" novalidate>
+                  <p id="create-class-message" class="auth-message hidden" role="alert"></p>
+                  <label class="auth-field">
+                    <span>Nombre de la clase</span>
+                    <input type="text" name="nombre" placeholder="Calculo diferencial A" required />
+                  </label>
+                  <label class="auth-field">
+                    <span>Descripcion</span>
+                    <input type="text" name="descripcion" placeholder="Grupo con enfoque en integrales" />
+                  </label>
+                  <label class="auth-field">
+                    <span>Cupo</span>
+                    <input type="number" name="cupo" min="1" max="500" step="1" value="30" required />
+                  </label>
+                  <label class="auth-field">
+                    <span>Visibilidad</span>
+                    <select name="visibilidad">
+                      <option value="publica" selected>Publica (cualquier estudiante puede unirse)</option>
+                      <option value="privada">Privada (solo matricula el profesor)</option>
+                    </select>
+                  </label>
+                  <button class="btn btn-primary btn-block" type="submit">Crear clase</button>
+                </form>
+              </article>
+              <article class="panel-card">
+                <h3 class="panel-title">Matricular en una clase</h3>
+                <p class="panel-subtitle">Por correo @udla.edu.co o por matricula; solo uno a la vez.</p>
+                <form id="enroll-student-form" class="panel-form" novalidate>
+                  <p id="enroll-student-message" class="auth-message hidden" role="alert"></p>
+                  <label class="auth-field">
+                    <span>Clase</span>
+                    <select name="classId" id="enroll-class-select" required></select>
+                  </label>
+                  <label class="auth-field">
+                    <span>Correo del estudiante</span>
+                    <input type="email" name="studentEmail" placeholder="estudiante@udla.edu.co" />
+                  </label>
+                  <label class="auth-field">
+                    <span>O matricula</span>
+                    <input type="text" name="studentMatricula" placeholder="Solo si no usas correo" maxlength="32" />
+                  </label>
+                  <button class="btn btn-primary btn-block" type="submit">Matricular</button>
+                </form>
+              </article>
+            </div>
+          </div>
+
+          <div id="professor-tab-ejercicios" class="professor-tab hidden" role="tabpanel" data-prof-panel="ejercicios">
+            <article class="panel-card panel-card--solo">
+              <h3 class="panel-title">Publicar ejercicio</h3>
+              <p class="panel-subtitle">Elige la clase, titulo, dificultad y recompensas; opcional fecha limite y tema de repaso.</p>
+              <form id="create-exercise-form" class="panel-form panel-form-grid" novalidate>
+                <p id="create-exercise-message" class="auth-message hidden" role="alert"></p>
                 <label class="auth-field">
                   <span>Clase</span>
-                  <select name="classId" id="enroll-class-select" required></select>
+                  <select name="classId" id="exercise-class-select" required></select>
                 </label>
                 <label class="auth-field">
-                  <span>Correo del estudiante</span>
-                  <input type="email" name="studentEmail" placeholder="estudiante@udla.edu.co" />
+                  <span>Titulo</span>
+                  <input type="text" name="titulo" placeholder="Taller de integrales por partes" required />
                 </label>
                 <label class="auth-field">
-                  <span>O matricula</span>
-                  <input type="text" name="studentMatricula" placeholder="Solo si no usas correo" maxlength="32" />
+                  <span>Dificultad</span>
+                  <select name="difficulty">
+                    <option value="basica">Basica</option>
+                    <option value="media" selected>Media</option>
+                    <option value="avanzada">Avanzada</option>
+                  </select>
                 </label>
-                <button class="btn btn-primary btn-block" type="submit">Matricular</button>
+                <label class="auth-field">
+                  <span>Fecha limite</span>
+                  <input type="date" name="dueDate" />
+                </label>
+                <label class="auth-field">
+                  <span>Monedas al completar</span>
+                  <input type="number" name="coinsReward" min="0" max="100000" step="1" value="0" />
+                </label>
+                <label class="auth-field">
+                  <span>XP al completar</span>
+                  <input type="number" name="xpReward" min="0" max="100000" step="1" value="0" />
+                </label>
+                <label class="auth-field auth-field-span-full">
+                  <span>Tema de repaso (opcional)</span>
+                  <input type="text" name="reviewTopic" placeholder="Ej. Integracion por partes" maxlength="180" />
+                </label>
+                <label class="auth-field auth-field-span-full">
+                  <span>Descripcion</span>
+                  <input type="text" name="descripcion" placeholder="Incluye desarrollo paso a paso" />
+                </label>
+                <label class="auth-field auth-field-span-full">
+                  <span>Grafico Desmos (opcional)</span>
+                  <input
+                    type="text"
+                    name="graphLatex"
+                    id="graph-latex-input"
+                    maxlength="4000"
+                    autocomplete="off"
+                    placeholder="Ej: y=x^2  o  f(x)=sin(x)"
+                  />
+                </label>
+                <p class="desmos-hint auth-field-span-full">
+                  Notacion Desmos. La vista previa se actualiza al escribir (requiere API key en produccion).
+                </p>
+                <div
+                  id="desmos-create-preview"
+                  class="desmos-container desmos-container--form auth-field-span-full"
+                  aria-label="Vista previa del grafico"
+                ></div>
+                <button class="btn btn-primary btn-block auth-field-span-full" type="submit">Crear ejercicio</button>
               </form>
             </article>
           </div>
-          <article class="panel-card">
-            <h3 class="panel-title">Crear ejercicio</h3>
-            <p class="panel-subtitle">Publica actividades y define tema de repaso.</p>
-            <form id="create-exercise-form" class="panel-form panel-form-grid" novalidate>
-              <p id="create-exercise-message" class="auth-message hidden" role="alert"></p>
-              <label class="auth-field">
-                <span>Clase</span>
-                <select name="classId" id="exercise-class-select" required></select>
-              </label>
-              <label class="auth-field">
-                <span>Titulo</span>
-                <input type="text" name="titulo" placeholder="Taller de integrales por partes" required />
-              </label>
-              <label class="auth-field">
-                <span>Dificultad</span>
-                <select name="difficulty">
-                  <option value="basica">Basica</option>
-                  <option value="media" selected>Media</option>
-                  <option value="avanzada">Avanzada</option>
-                </select>
-              </label>
-              <label class="auth-field">
-                <span>Fecha limite</span>
-                <input type="date" name="dueDate" />
-              </label>
-              <label class="auth-field">
-                <span>Monedas al completar</span>
-                <input type="number" name="coinsReward" min="0" max="100000" step="1" value="0" />
-              </label>
-              <label class="auth-field">
-                <span>XP al completar</span>
-                <input type="number" name="xpReward" min="0" max="100000" step="1" value="0" />
-              </label>
-              <label class="auth-field auth-field-span-full">
-                <span>Tema de repaso (opcional)</span>
-                <input type="text" name="reviewTopic" placeholder="Ej. Integracion por partes" maxlength="180" />
-              </label>
-              <label class="auth-field auth-field-span-full">
-                <span>Descripcion</span>
-                <input type="text" name="descripcion" placeholder="Incluye desarrollo paso a paso" />
-              </label>
-              <button class="btn btn-primary btn-block auth-field-span-full" type="submit">Crear ejercicio</button>
-            </form>
-          </article>
-          <div class="dashboard-two-columns">
-            <article class="panel-card">
-              <h3 class="panel-title">Tus clases</h3>
-              <div class="panel-list" id="professor-classes-list"></div>
-            </article>
-            <article class="panel-card">
-              <h3 class="panel-title">Estudiantes recientes</h3>
-              <div class="panel-list" id="professor-students-list"></div>
-            </article>
-          </div>
-          <article class="panel-card">
-            <h3 class="panel-title">Ejercicios publicados</h3>
-            <div class="panel-list" id="professor-exercises-list"></div>
-          </article>
-          <article class="panel-card">
-            <h3 class="panel-title">Sugerencias</h3>
-            <div class="insights-list" id="professor-insights-list"></div>
-          </article>
         </section>
 
         <section id="student-panel" class="role-panel hidden">
-          <article class="panel-card">
-            <h3 class="panel-title">Clases publicas disponibles</h3>
-            <p class="panel-subtitle">Unete con un clic si la clase aun tiene cupo.</p>
-            <div class="panel-list" id="student-public-classes-list"></div>
-          </article>
-          <div class="dashboard-two-columns">
+          <nav class="dashboard-subnav" role="tablist" aria-label="Secciones del estudiante">
+            <button type="button" class="subnav-btn is-active" role="tab" data-student-tab="resumen" aria-selected="true">
+              Resumen
+            </button>
+            <button type="button" class="subnav-btn" role="tab" data-student-tab="explorar" aria-selected="false">
+              Clases publicas
+            </button>
+          </nav>
+
+          <div id="student-tab-resumen" class="student-tab" role="tabpanel" data-student-panel="resumen">
+            <div class="dashboard-two-columns">
+              <article class="panel-card">
+                <h3 class="panel-title">Clases matriculadas</h3>
+                <div class="panel-list" id="student-classes-list"></div>
+              </article>
+              <article class="panel-card">
+                <h3 class="panel-title">Ejercicios activos</h3>
+                <div class="panel-list" id="student-exercises-list"></div>
+              </article>
+            </div>
             <article class="panel-card">
-              <h3 class="panel-title">Clases matriculadas</h3>
-              <div class="panel-list" id="student-classes-list"></div>
-            </article>
-            <article class="panel-card">
-              <h3 class="panel-title">Ejercicios activos</h3>
-              <div class="panel-list" id="student-exercises-list"></div>
+              <h3 class="panel-title">Sugerencias del sistema</h3>
+              <div class="insights-list" id="student-insights-list"></div>
             </article>
           </div>
-          <article class="panel-card">
-            <h3 class="panel-title">Sugerencias del sistema</h3>
-            <div class="insights-list" id="student-insights-list"></div>
-          </article>
+
+          <div id="student-tab-explorar" class="student-tab hidden" role="tabpanel" data-student-panel="explorar">
+            <article class="panel-card panel-card--solo">
+              <h3 class="panel-title">Unirse a una clase publica</h3>
+              <p class="panel-subtitle">Solo aparecen clases abiertas con cupo disponible.</p>
+              <div class="panel-list" id="student-public-classes-list"></div>
+            </article>
+          </div>
         </section>
       </div>
     </section>
@@ -828,6 +891,26 @@ function formatPermission(permission: string): string {
   return permission.replaceAll("_", " ");
 }
 
+function desmosGraphToggleRow(exerciseId: number, graphLatex: string): string {
+  const g = graphLatex.trim();
+  if (!g) {
+    return "";
+  }
+  return `
+    <div class="desmos-exercise-block">
+      <button
+        type="button"
+        class="btn btn-ghost btn-small desmos-toggle-btn"
+        data-desmos-target="desmos-slot-${exerciseId}"
+        data-desmos-latex="${encodeURIComponent(g)}"
+      >
+        Ver grafico (Desmos)
+      </button>
+      <div id="desmos-slot-${exerciseId}" class="desmos-slot hidden" aria-live="polite"></div>
+    </div>
+  `;
+}
+
 function exerciseStatusLabel(status: string): string {
   return status === "entregado" ? "Completado" : "Pendiente";
 }
@@ -977,6 +1060,7 @@ function renderProfessorDashboard(data: DashboardResponse): void {
                     <span>${escapeHtml(formatDate(exercise.dueDate))}</span>
                     <span>+${exercise.coinsReward} mon / +${exercise.xpReward} XP</span>
                   </div>
+                  ${desmosGraphToggleRow(exercise.id, exercise.graphLatex ?? "")}
                 </article>
               `,
             )
@@ -1091,6 +1175,7 @@ function renderStudentDashboard(data: DashboardResponse): void {
                     <span>${escapeHtml(formatDifficulty(exercise.dificultad))}</span>
                     <span>${escapeHtml(formatDate(exercise.dueDate))}</span>
                   </div>
+                  ${desmosGraphToggleRow(exercise.id, exercise.graphLatex ?? "")}
                   ${
                     exercise.status === "entregado"
                       ? `<div class="list-card-actions">
@@ -1129,6 +1214,41 @@ function renderStudentDashboard(data: DashboardResponse): void {
   }
 }
 
+type ProfessorTabId = "resumen" | "estudiantes" | "clases" | "ejercicios";
+type StudentTabId = "resumen" | "explorar";
+
+function setProfessorTab(tab: ProfessorTabId): void {
+  if (!professorPanel) {
+    return;
+  }
+  professorPanel.querySelectorAll<HTMLButtonElement>("[data-prof-tab]").forEach((btn) => {
+    const id = btn.getAttribute("data-prof-tab") as ProfessorTabId | null;
+    const active = id === tab;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  professorPanel.querySelectorAll<HTMLElement>(".professor-tab").forEach((el) => {
+    const panelId = el.id.replace("professor-tab-", "") as ProfessorTabId;
+    el.classList.toggle("hidden", panelId !== tab);
+  });
+}
+
+function setStudentTab(tab: StudentTabId): void {
+  if (!studentPanel) {
+    return;
+  }
+  studentPanel.querySelectorAll<HTMLButtonElement>("[data-student-tab]").forEach((btn) => {
+    const id = btn.getAttribute("data-student-tab") as StudentTabId | null;
+    const active = id === tab;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  studentPanel.querySelectorAll<HTMLElement>(".student-tab").forEach((el) => {
+    const panelId = el.id.replace("student-tab-", "") as StudentTabId;
+    el.classList.toggle("hidden", panelId !== tab);
+  });
+}
+
 function renderDashboard(data: DashboardResponse): void {
   dashboardData = data;
   if (dashboardRoleBadge) {
@@ -1143,8 +1263,8 @@ function renderDashboard(data: DashboardResponse): void {
   if (dashboardSubtitle) {
     dashboardSubtitle.textContent =
       data.user.role === "profesor"
-        ? `Crea ejercicios, matricula estudiantes y revisa avances desde un solo panel. Programa: ${data.user.programa}.`
-        : `Revisa tus clases matriculadas, ejercicios pendientes y progreso promedio. Programa: ${data.user.programa}.`;
+        ? `Usa las pestañas abajo para ver el resumen o abrir cada tarea por separado. Programa: ${data.user.programa}.`
+        : `Resumen de tus clases y ejercicios; en otra pestaña puedes unirte a clases publicas. Programa: ${data.user.programa}.`;
   }
   if (permissionsList) {
     permissionsList.innerHTML = data.permissions
@@ -1164,8 +1284,10 @@ function renderDashboard(data: DashboardResponse): void {
   studentPanel?.classList.toggle("hidden", isProfessor);
 
   if (isProfessor) {
+    setProfessorTab("resumen");
     renderProfessorDashboard(data);
   } else {
+    setStudentTab("resumen");
     renderStudentDashboard(data);
   }
 }
@@ -1373,6 +1495,28 @@ goHomeButton?.addEventListener("click", () => {
     return;
   }
   showHomeView();
+});
+
+professorPanel?.addEventListener("click", (event) => {
+  const btn = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-prof-tab]");
+  if (!btn) {
+    return;
+  }
+  const tab = btn.getAttribute("data-prof-tab") as ProfessorTabId | null;
+  if (tab === "resumen" || tab === "estudiantes" || tab === "clases" || tab === "ejercicios") {
+    setProfessorTab(tab);
+  }
+});
+
+studentPanel?.addEventListener("click", (event) => {
+  const btn = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-student-tab]");
+  if (!btn) {
+    return;
+  }
+  const tab = btn.getAttribute("data-student-tab") as StudentTabId | null;
+  if (tab === "resumen" || tab === "explorar") {
+    setStudentTab(tab);
+  }
 });
 
 function isUdlaEmailClient(value: string): boolean {
@@ -1918,9 +2062,14 @@ createExerciseForm?.addEventListener("submit", async (event) => {
         coinsReward: Number(formData.get("coinsReward") ?? 0),
         xpReward: Number(formData.get("xpReward") ?? 0),
         reviewTopic: String(formData.get("reviewTopic") ?? "").trim(),
+        graphLatex: String(formData.get("graphLatex") ?? "").trim(),
       }),
     });
     createExerciseForm.reset();
+    const desmosCreateBox = document.getElementById("desmos-create-preview");
+    if (desmosCreateBox) {
+      destroyDesmosGraph(desmosCreateBox);
+    }
     showInlineMessage(
       createExerciseMessage,
       data.message ?? "Ejercicio creado correctamente.",
@@ -2005,6 +2154,64 @@ document.addEventListener("click", () => {
 userMenu?.addEventListener("click", (e) => {
   e.stopPropagation();
 });
+
+let desmosPreviewTimer: number | undefined;
+function wireDesmosExercisePreview(): void {
+  const input = document.getElementById("graph-latex-input");
+  const box = document.getElementById("desmos-create-preview");
+  if (!input || !box) {
+    return;
+  }
+  const schedule = (): void => {
+    window.clearTimeout(desmosPreviewTimer);
+    desmosPreviewTimer = window.setTimeout(async () => {
+      const v = (input as HTMLInputElement).value.trim();
+      destroyDesmosGraph(box);
+      if (!v) {
+        return;
+      }
+      try {
+        await mountDesmosGraph(box, v);
+      } catch {
+        box.innerHTML =
+          '<p class="desmos-preview-error">No se pudo cargar el grafico. Revisa la expresion o configura VITE_DESMOS_API_KEY en .env (ver desmos.com/api).</p>';
+      }
+    }, 450);
+  };
+  input.addEventListener("input", schedule);
+}
+
+document.body.addEventListener("click", (event) => {
+  const btn = (event.target as HTMLElement).closest<HTMLButtonElement>(".desmos-toggle-btn");
+  if (!btn) {
+    return;
+  }
+  event.preventDefault();
+  const targetId = btn.dataset.desmosTarget;
+  const enc = btn.dataset.desmosLatex;
+  if (!targetId || enc === undefined) {
+    return;
+  }
+  const slot = document.getElementById(targetId);
+  if (!slot) {
+    return;
+  }
+  const latex = decodeURIComponent(enc);
+  const willShow = slot.classList.contains("hidden");
+  if (willShow) {
+    slot.classList.remove("hidden");
+    btn.textContent = "Ocultar grafico";
+    void mountDesmosGraph(slot, latex).catch((err: unknown) => {
+      slot.innerHTML = `<p class="desmos-preview-error">${escapeHtml(err instanceof Error ? err.message : "Error")}</p>`;
+    });
+  } else {
+    slot.classList.add("hidden");
+    btn.textContent = "Ver grafico (Desmos)";
+    destroyDesmosGraph(slot);
+  }
+});
+
+wireDesmosExercisePreview();
 
 if (getUserSession()) {
   void loadDashboard();

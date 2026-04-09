@@ -827,6 +827,78 @@ h1 span {
   gap: 1rem;
 }
 
+.dashboard-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding: 0.35rem;
+  border-radius: 0.85rem;
+  background: rgba(5, 10, 22, 0.65);
+  border: 1px solid rgba(111, 128, 178, 0.2);
+}
+
+.subnav-btn {
+  flex: 1 1 auto;
+  min-width: min(140px, 100%);
+  padding: 0.62rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.subnav-btn:hover {
+  color: #e8ecff;
+  background: rgba(8, 216, 199, 0.08);
+}
+
+.subnav-btn.is-active {
+  color: #0a1628;
+  background: linear-gradient(135deg, var(--primary), #5ec8d4);
+  border-color: rgba(8, 216, 199, 0.45);
+  box-shadow: 0 6px 20px rgba(8, 216, 199, 0.22);
+}
+
+#professor-panel .subnav-btn.is-active {
+  color: #061018;
+}
+
+#student-panel .subnav-btn.is-active {
+  color: #061018;
+}
+
+.panel-card--solo {
+  max-width: min(720px, 100%);
+  margin-inline: auto;
+}
+
+.professor-tab,
+.student-tab {
+  display: grid;
+  gap: 1rem;
+  animation: panel-fade 0.22s ease;
+}
+
+@keyframes panel-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .dashboard-two-columns {
   display: grid;
   gap: 1rem;
@@ -981,6 +1053,49 @@ h1 span {
   font-weight: 700;
 }
 
+.desmos-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.desmos-container {
+  min-height: 280px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgba(111, 128, 178, 0.28);
+  background: #0c1018;
+}
+
+.desmos-container--form {
+  margin-top: 0.35rem;
+}
+
+.desmos-slot {
+  margin-top: 0.65rem;
+  min-height: 260px;
+  border-radius: 0.65rem;
+  overflow: hidden;
+  border: 1px solid rgba(8, 216, 199, 0.22);
+  background: #0c1018;
+}
+
+.desmos-exercise-block {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.desmos-preview-error {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.86rem;
+  color: #ffb4b4;
+  line-height: 1.4;
+}
+
 .hidden {
   display: none;
 }
@@ -1049,5 +1164,14 @@ h1 span {
 
   .panel-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-subnav {
+    flex-direction: column;
+  }
+
+  .subnav-btn {
+    min-width: 100%;
+    text-align: center;
   }
 }
